@@ -1,0 +1,15 @@
+<footer class="text-center text-muted w-100 mt-auto fixed-bottom" style="position: sticky; bottom: 0; width: 100%;">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+
+    {{!-- The "mobile" variable should be true is the screen width is less than 769px --}}
+    {{!-- Here, if the screen is small enough, the navbar should be displayed in the footer --}}
+    {{#if mobile}}
+    {{> nav}}
+    {{/if}}
+
+    <p>
+        &copy; Copyright 2025 : Gymtendo
+    </p>
+</footer>
+</body>
+</html>
