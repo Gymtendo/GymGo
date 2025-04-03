@@ -1,0 +1,12 @@
+@media (max-width: 768px) {
+    .nav-text {display: none;}
+    .nav-link {text-align: center; padding: 10px;}
+}
+
+@media (min-width: 769px) {
+    .navbar-nav {
+        display: flex;
+        justify-content: space-around;
+        width: 100%;
+    }
+}
