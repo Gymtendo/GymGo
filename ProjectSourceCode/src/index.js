@@ -26,10 +26,8 @@ app.post('/register', (req, res) => {
     return res.status(201).send({ message: 'User registered successfully', user: newUser });
 });
 
-// ✅ Export app for tests
 module.exports = app;
 
-// ✅ Only start the server if run directly (not during tests)
 if (require.main === module) {
     const PORT = process.env.PORT || 3000;
     app.listen(PORT, () => {

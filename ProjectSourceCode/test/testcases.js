@@ -10,11 +10,13 @@ let server;
 describe('User Registration', () => {
     // Start the server before tests
     before((done) => {
-        server = app.listen(3000, () => {
-            console.log('Test server running on port 3000');
-            done();
-        });
-    });
+      server = app.listen(0, () => {
+          const port = server.address().port;
+          console.log(`Test server running on port ${port}`);
+          done();
+      });
+  });
+  
 
     // Close the server after tests
     after(() => {
