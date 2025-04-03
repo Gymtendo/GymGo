@@ -1,0 +1,151 @@
+GymGo - User Acceptance Testing Plan
+Team Name: Gymtendo
+Team Number: 06
+Project Name: GymGo
+Testing Environment: Localhost (development server)
+
+------------------------------------------------------------
+Feature 1: User Login
+------------------------------------------------------------
+
+Test Cases:
+
+Test Case ID: UAT-Login-01
+Description: User logs in with correct credentials
+Test Data:
+  Email: testuser@gymgo.com
+  Password: CorrectPass123!
+Expected Result: User is redirected to dashboard/home page
+Actual Result: (TBD)
+
+Test Case ID: UAT-Login-02
+Description: User attempts login with incorrect password
+Test Data:
+  Email: testuser@gymgo.com
+  Password: WrongPass123
+Expected Result: Error message: "Invalid email or password"
+Actual Result: (TBD)
+
+Test Case ID: UAT-Login-03
+Description: User leaves email or password field empty
+Test Data:
+  Email: (empty), Password: somepass
+Expected Result: Error: "Email is required"
+Actual Result: (TBD)
+
+Acceptance Criteria:
+- Form must validate required fields.
+- Incorrect credentials should show specific error.
+- Successful login redirects to dashboard.
+
+------------------------------------------------------------
+Feature 2: Add Exercise
+------------------------------------------------------------
+
+Test Cases:
+
+Test Case ID: UAT-Exercise-01
+Description: User adds a valid exercise
+Test Data:
+  Exercise: Bench Press
+  Reps: 10
+  Weight: 135
+Expected Result: Exercise is saved and reflected in user's history
+Actual Result: (TBD)
+
+Test Case ID: UAT-Exercise-02
+Description: User submits with missing fields
+Test Data:
+  Reps: 10, Weight: (empty)
+Expected Result: Error: "Weight is required"
+Actual Result: (TBD)
+
+Test Case ID: UAT-Exercise-03
+Description: Invalid input (letters in weight)
+Test Data:
+  Weight: abc
+Expected Result: Error: "Weight must be a number"
+Actual Result: (TBD)
+
+Acceptance Criteria:
+- Exercise is stored in DB under user’s profile.
+- Form validates numeric input.
+- Error messages are user-friendly.
+
+------------------------------------------------------------
+Feature 3: Add Friend
+------------------------------------------------------------
+
+Test Cases:
+
+Test Case ID: UAT-Friend-01
+Description: User adds a friend by entering a valid email
+Test Data:
+  Email: frienduser@gymgo.com
+Expected Result: Friend request is sent or friend is added successfully
+Actual Result: (TBD)
+
+Test Case ID: UAT-Friend-02
+Description: User tries to add a friend with an invalid email
+Test Data:
+  Email: notanemail
+Expected Result: Error message: "Please enter a valid email address"
+Actual Result: (TBD)
+
+Test Case ID: UAT-Friend-03
+Description: User tries to add a friend who is already on their friend list
+Test Data:
+  Email: existingfriend@gymgo.com
+Expected Result: Error message: "This user is already your friend"
+Actual Result: (TBD)
+
+Acceptance Criteria:
+- User can send or confirm friend requests.
+- System prevents duplicate or invalid friend additions.
+- User receives feedback about the request status.
+
+------------------------------------------------------------
+Testers Information
+------------------------------------------------------------
+
+Tester Name: Emma Cotrell
+Role: Team Member
+Notes: UI/UX testing
+
+Tester Name: Ethan Wang
+Role: Team Member
+Notes: Data validation & logic
+
+Tester Name: Emily Zabron
+Role: Team Member
+Notes: Form submission & error handling
+
+Tester Name: Isaac Mitchell
+Role: Team Member
+Notes: Backend functionality
+
+Tester Name: Kevin Wang
+Role: Team Member
+Notes: Integration testing
+
+------------------------------------------------------------
+Risks
+------------------------------------------------------------
+
+A risk is a future, uncertain event with a probability of occurrence and a potential for loss. Below are the types of project risks that may affect the GymGo project:
+
+Organizational Risks:
+- Potential scheduling conflicts between team members
+- Limited availability of team members
+- Lack of experience in certain applications
+
+Technical Risks:
+- Untested or incomplete features 
+- Missing edge cases on tests
+- Integration issues between frontend and backend components
+
+Mitigation Strategy:
+- Stick to Agile methodology with weekly sprints and code reviews
+- Conduct early internal testing before 
+- Maintain open communication within the team through Discord and scheduled meetings
+- Prioritize testing core user stories before stretch features
