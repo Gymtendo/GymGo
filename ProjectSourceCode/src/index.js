@@ -1,6 +1,7 @@
 const express = require('express');
 const handlebars = require('express-handlebars');
-const Handlebars = require('handlebars');
+const Handlebars = require('handlebars')
+const path = require('path');;
 
 const app = express();
 
@@ -22,6 +23,18 @@ let users = [];
 
 app.get('/welcome', (req, res) => {
     res.json({ status: 'success', message: 'Welcome to the API!' });
+});
+
+app.get('/', (req, res) => {
+    res.redirect('/login');
+});
+
+app.get('/login', (req, res) => {
+    res.render('pages/login.hbs', {});
+});
+
+app.get('/register', (req, res) => {
+    res.render('pages/register.hbs', {});
 });
 
 app.post('/register', (req, res) => {
