@@ -20,8 +20,9 @@
     },
     "scripts": {
         "prestart": "npm install",
-        "start": "nodemon index.js",
+        "start": "nodemon ProjectSourceCode/src/index.js",
         "test": "mocha test/testcases.js",
         "testandrun": "npm run prestart && npm run test && npm start"
     }
-}
+  }
+  

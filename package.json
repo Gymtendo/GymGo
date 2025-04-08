@@ -1,0 +1,34 @@
+{
+  "name": "gymgo",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "prestart": "npm install",
+    "start": "nodemon ProjectSourceCode/src/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "testandrun": "npm run prestart && npm run test && npm start"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Gymtendo/GymGo.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Gymtendo/GymGo/issues"
+  },
+  "homepage": "https://github.com/Gymtendo/GymGo#readme",
+  "dependencies": {
+    "express": "^5.1.0",
+    "express-handlebars": "^8.0.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.9"
+  }
+}
+
