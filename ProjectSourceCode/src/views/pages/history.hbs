@@ -1,0 +1,58 @@
+<div class="container mt-4">
+    <h2 class="mb-4 text-center">Workout History</h2>
+
+    <!-- Form to Add Workout Entry -->
+    <form action="/history" method="POST" class="mb-5">
+        <div class="row g-3">
+            <div class="col-md-4">
+                <label for="date" class="form-label">Date</label>
+                <input type="date" class="form-control" id="date" name="date" required>
+            </div>
+            <div class="col-md-4">
+                <label for="workoutType" class="form-label">Workout Type</label>
+                <input type="text" class="form-control" id="workoutType" name="workoutType" placeholder="e.g., Push Day"
+                    required>
+            </div>
+            <div class="col-md-4">
+                <label for="xp" class="form-label">XP Earned</label>
+                <input type="number" class="form-control" id="xp" name="xp" required>
+            </div>
+            <div class="col-12">
+                <label for="exercises" class="form-label">Exercises (Optional)</label>
+                <textarea class="form-control" id="exercises" name="exercises" rows="3"
+                    placeholder="List exercises here..."></textarea>
+            </div>
+            <div class="col-12 text-center">
+                <button type="submit" class="btn btn-primary mt-3">Add Workout</button>
+            </div>
+        </div>
+    </form>
+
+    <!-- Workout History Table -->
+    <div class="table-responsive">
+        <table class="table table-striped table-bordered align-middle">
+            <thead class="table-dark">
+                <tr>
+                    <th>Date</th>
+                    <th>Workout Type</th>
+                    <th>XP Earned</th>
+                    <th>Exercises</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{#each workouts}}
+                <tr>
+                    <td>{{this.date}}</td>
+                    <td>{{this.workoutType}}</td>
+                    <td>{{this.xp}}</td>
+                    <td>{{this.exercises}}</td>
+                </tr>
+                {{else}}
+                <tr>
+                    <td colspan="4" class="text-center">No workouts logged yet.</td>
+                </tr>
+                {{/each}}
+            </tbody>
+        </table>
+    </div>
+</div>
