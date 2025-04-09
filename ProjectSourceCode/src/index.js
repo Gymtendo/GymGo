@@ -96,6 +96,7 @@ app.get('/register', (req, res) => {
 
 app.post('/register', async (req, res) => {
     const { username, password, email } = req.body;
+
     if (!username || !password || !email) {
         return res.status(400).send({ message: 'All fields are required' });
     }
@@ -134,6 +135,34 @@ const auth = (req, res, next) => {
     next();
 }
 
+// 🔹 Profile route
+app.get('/profile', (req, res) => {
+    if (!req.session.loggedIn) {
+        return res.status(401).send({ message: 'Please log in first' });
+    }
+    res.status(200).send({
+        message: 'Profile information',
+        user: { username: req.session.username, email: req.session.email }
+    });
+});
+
+// 🔹 Logout route
+app.get('/logout', (req, res) => {
+    req.session.destroy(err => {
+        if (err) {
+            console.error("Error destroying session:", err);
+            return res.render('pages/logout', { error_message: "Error logging out. Please try again." });
+        }
+        res.render('pages/logout', { success_message: "Logged out successfully!" });
+    });
+});
+
+// 🔹 Test route to check rendering
+app.get('/test', (req, res) => {
+    res.render('pages/logout', { success_message: 'Test page!' });
+});
+
+// 🔹 Export app or run it
 module.exports = app;
 
 if (require.main === module) {
