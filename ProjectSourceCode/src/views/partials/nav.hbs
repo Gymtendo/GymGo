@@ -4,7 +4,7 @@
       {{!-- Start of navbar items, change order as needed. --}}
       <li class="nav-item">
         {{!-- Here I am assuming that the default page is the leaderboard. Change as needed. --}}
-        <a class="nav-link" href="/">
+        <a class="nav-link" href="/leaderboard">
           <i class="bi bi-list-ol"></i> <span class="nav-text">Leaderboard</span>
         </a>
       </li>
@@ -13,15 +13,32 @@
           <i class="bi bi-people"></i> <span class="nav-text">Friends</span>
         </a>
       </li>
-      <li class="nav-item">
-        <a class="nav-link" href="/add">
+      <!-- Dropdown menu under "Add Exercise" -->
+      <li class="nav-item dropdown">
+        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown"
+          aria-expanded="false">
           <i class="bi bi-plus"></i> <span class="nav-text">Add Exercise</span>
         </a>
+        <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+          <li><a class="dropdown-item" href="/history">Workout History</a></li>
+        </ul>
       </li>
       <li class="nav-item">
         <a class="nav-link" href="/boss">
           <i class="bi bi-emoji-angry"></i> <span class="nav-text">Boss</span>
         </a>
+      </li>
+      <!-- Goals dropdown menu -->
+      <li class="nav-item dropdown">
+        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown"
+          aria-expanded="false">
+          <i class="bi bi-trophy"></i> <span class="nav-text">Goals</span>
+        </a>
+        <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+          <li><a class="dropdown-item" href="/goals/lose-fat-gain-muscle">Lose Fat Gain Muscle</a></li>
+          <li><a class="dropdown-item" href="/goals/gain-muscle-and-fat">Gain Muscle and Fat</a></li>
+          <li><a class="dropdown-item" href="/goals/lose-fat">Lose Fat</a></li>
+        </ul>
       </li>
       {{!-- Variable "login" should be true if user is logged in and false otherwise --}}
       <li class="nav-item">
@@ -38,3 +55,7 @@
     </ul>
   </div>
 </nav>
+
+<!-- Make sure to include Bootstrap's JS for dropdown functionality (if not already included in your template) -->
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.min.js"></script>
