@@ -1,0 +1,17 @@
+{{#if message}}
+{{> message}}
+{{/if}}
+
+<div class="container py-4">
+    <div class="image-card text-center">
+        {{#if BossImage}}
+        <img src="{{BossImage}}" alt="Boss Image" />
+        {{else}}
+        {{!-- TODO: INSERT PLACEHOLDER IMAGE HERE --}}
+        {{/if}}
+        <h5 class="mt-3">{{Boss Name}}</h5>
+        <div class="progress" role="progressbar" aria-label="Health" aria-valuenow="75" aria-valuemin="0" aria-valuemax="100">
+        <div class="progress-bar bg-success" style="width: 75%">75%</div>
+        </div>
+    </div>
+</div>
