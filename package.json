@@ -25,10 +25,10 @@
   "homepage": "https://github.com/Gymtendo/GymGo#readme",
   "dependencies": {
     "express": "^5.1.0",
-    "express-handlebars": "^8.0.1"
+    "express-handlebars": "^8.0.1",
+    "express-session": "^1.18.1"
   },
   "devDependencies": {
     "nodemon": "^3.1.9"
   }
 }
-

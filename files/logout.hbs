@@ -1,0 +1,14 @@
+<html>
+<head><title>Logout</title></head>
+<body>
+    {{#if success_message}}
+        <h1>{{success_message}}</h1>
+    {{/if}}
+
+    {{#if error_message}}
+        <h1>{{error_message}}</h1>
+    {{/if}}
+
+    <a href="/login">Login again</a>
+</body>
+</html>
