@@ -12,7 +12,7 @@ document.querySelectorAll('.progress').forEach(progress => {
     // Displays the correct current progress / max progress text
     const wrapper = progress.parentElement;
     const text = progress.querySelector('.progress-text');
-    label.textContent = `${cur} / ${max}`;
+    text.textContent = `${cur} / ${max}`;
 
     // Displays the accurate progress graphic
     const bar = progress.querySelector('.progress-bar');

@@ -192,26 +192,35 @@ app.get('/leaderboard', (req, res) => {
 // *********************************************************************************
 app.get('/boss', async (req, res) => {
     try {
-        // Finds most recent boss to display (assuming the newest boss is the current one)
-        const idQuery = `SELECT BossID 
-                         FROM Boss 
-                         ORDER BY BossID 
-                         DESC LIMIT 1;`;
+        // // Finds most recent boss to display (assuming the newest boss is the current one)
+        // const idQuery = `SELECT BossID 
+        //                  FROM Boss 
+        //                  ORDER BY BossID 
+        //                  DESC LIMIT 1;`;
         
-        const id = await db.one(idQuery);
+        // const id = await db.one(idQuery);
 
-        // Queries and returns all info related to the current boss
-        const bossQuery = `SELECT BossID, Name, HP, MaxHP, Pic, RewardXP, Deadline 
-                           FROM Boss WHERE BossID = $1;`;
+        // // Queries and returns all info related to the current boss
+        // const bossQuery = `SELECT BossID, Name, HP, MaxHP, Pic, RewardXP, Deadline 
+        //                    FROM Boss WHERE BossID = $1;`;
         
-        let results = await db.query(bossQuery, [id]);
-        if (boss.length == 0) {
-            throw new Error("Boss Not Found!");
-        }
-        const boss = results[0];
+        // let results = await db.query(bossQuery, [id]);
+        // if (boss.length == 0) {
+        //     throw new Error("Boss Not Found!");
+        // }
+        // const boss = results[0];
+
+        // Hard coded for testing:
+        const boss = { Name: 'Gains Goblin',
+                       HP: 300,
+                       MaxHP: 500,
+                       Pic: null,
+                       RewardXP: 100,
+                       Deadline: '2025-04-18' };
 
         // Renders the boss page with quieried info
         res.render('pages/boss', {
+            message: null,
             BossImage: boss.Pic,
             BossName: boss.Name,
             HP: boss.HP,
@@ -223,7 +232,7 @@ app.get('/boss', async (req, res) => {
         if (error instanceof pgp.errors.QueryResultError) {
             res.status(500).render('pages/boss', { error_message: "Database error. Please try again later." });
         }
-        else if (err.message == "Boss Not Found!") {
+        else if (error.message == "Boss Not Found!") {
             res.status(404).render('pages/boss', { error_message: "Error querying for boss. Please try again later." });
         }
         else {
