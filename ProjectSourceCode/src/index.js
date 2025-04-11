@@ -187,6 +187,51 @@ app.get('/leaderboard', (req, res) => {
 });
 // ★★★ End of Leaderboard Implementation ★★★
 
+// *********************************************************************************
+// Boss Route Implementation
+// *********************************************************************************
+app.get('/boss', async (req, res) => {
+    try {
+        // Finds most recent boss to display (assuming the newest boss is the current one)
+        const idQuery = `SELECT BossID 
+                         FROM Boss 
+                         ORDER BY BossID 
+                         DESC LIMIT 1;`;
+        
+        const id = await db.one(idQuery);
+
+        // Queries and returns all info related to the current boss
+        const bossQuery = `SELECT BossID, Name, HP, MaxHP, Pic, RewardXP, Deadline 
+                           FROM Boss WHERE BossID = $1;`;
+        
+        let results = await db.query(bossQuery, [id]);
+        if (boss.length == 0) {
+            throw new Error("Boss Not Found!");
+        }
+        const boss = results[0];
+
+        // Renders the boss page with quieried info
+        res.render('pages/boss', {
+            BossImage: boss.Pic,
+            BossName: boss.Name,
+            HP: boss.HP,
+            MaxHP: boss.MaxHP,
+            Reward: boss.RewardXP,
+            Deadline: boss.Deadline
+        });
+    } catch (error) {
+        if (error instanceof pgp.errors.QueryResultError) {
+            res.status(500).render('pages/boss', { error_message: "Database error. Please try again later." });
+        }
+        else if (err.message == "Boss Not Found!") {
+            res.status(404).render('pages/boss', { error_message: "Error querying for boss. Please try again later." });
+        }
+        else {
+            res.status(500).render('pages/boss', { error_message: "Unexpected error." });
+        }
+    }
+});
+
 // 🔹 Export app or run it
 module.exports = app;
 
