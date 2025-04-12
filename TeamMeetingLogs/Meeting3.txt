@@ -1,0 +1,7 @@
+4/11/25
+
+Issac - 2 units tests and friends 
+Emily - Login logout, nav bar fine tuning, personal goals 
+Ethan - leaderboard + database
+Emma - exercise history add/drop 
+Kevin - Implemented the boss webpage frontend (boss.hbs, corresponding css and scripts) and backend /boss API route. Everything working except for the progress bar. Plans to work on repository structure, navbar, quests, project board, and database implementation soon.
