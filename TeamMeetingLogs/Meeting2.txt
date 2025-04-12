@@ -1,0 +1,13 @@
+4/4/25
+
+We are planning out the nav bar and the handle bars, we're drawing out a UI to implement
+Nav bar will be on the header, when opened on mobile it'll be on the footer
+We all finished user stories
+next week: have running code from the stories
+We have a small feature assigned to each person:
+    Issac - 2 units tests and friends 
+    Emily - Login logout, nav bar fine tuning, personal goals 
+    Ethan - leaderboard + database
+    Emma - exercise history add/drop 
+    Kevin - Objectives (quests/boss) + database
+Have wireframes online - more detail to plan out user stories before next week

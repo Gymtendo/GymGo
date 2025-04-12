@@ -1,3 +1,5 @@
+3/21/25
+
 Ethan worked on the two paragraph statement  about the application description, and the gym raids. 
 
 We only have a few user stories.
@@ -9,11 +11,3 @@ Isaac worked on the wire frames, and started on planning the user stories.
 Specify what type of crowd, college students ect
 
 Plan: have user stories up by next week. Do two stories each week
-
-4/4/25
-We are planning out the nav bar and the handle bars, we're drawing out a UI to implement
-Nav bar will be on the header, when opened on mobile it'll be on the footer
-We all finished user stories
-next week: have running code from the stories
-We have a small feature assigned to each person
-Have wireframes online - more detail to plan out user stories before next week

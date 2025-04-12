@@ -10,3 +10,25 @@
         width: 100%;
     }
 }
+
+/* Styling for images and image cards */
+.image-card {
+    max-width: 300px;
+    margin: auto;
+}
+
+img {
+    width: 100%;
+    height: auto;
+    border-radius: 0.5rem;
+}
+
+/* Makes progress bar text black and float in the middle of the bar */
+.progress-text {
+    position: absolute;
+    width: 100%;
+    text-align: center;
+    font-weight: bold;
+    top: 0;
+    color: black;
+}

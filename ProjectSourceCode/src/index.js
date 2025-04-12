@@ -1,3 +1,6 @@
+// *********************************************************************************
+// Import Dependencies
+// *********************************************************************************
 const express = require('express');
 const handlebars = require('express-handlebars');
 const Handlebars = require('handlebars');
@@ -9,6 +12,9 @@ const bcrypt = require('bcryptjs'); //  To hash passwords
 
 const app = express();
 
+// *********************************************************************************
+// Connect to DB
+// *********************************************************************************
 const hbs = handlebars.create({
   extname: 'hbs',
   layoutsDir: __dirname + '/views/layouts',
@@ -36,7 +42,9 @@ const db = pgp(dbConfig);
 //     console.log('ERROR:', error.message || error);
 //   });
 
-
+// *********************************************************************************
+// App Settings
+// *********************************************************************************
 // Register `hbs` as our view engine using its bound `engine()` function.
 app.engine('hbs', hbs.engine);
 app.set('view engine', 'hbs');
@@ -56,12 +64,19 @@ app.use(
     })
 );
 
-let users = [];
+// *********************************************************************************
+// Welcome Route Implementation
+// *********************************************************************************
+
+// let users = [];
 
 app.get('/welcome', (req, res) => {
     res.json({ status: 'success', message: 'Welcome to the API!' });
 });
 
+// *********************************************************************************
+// Login Route Implementation
+// *********************************************************************************
 app.get('/', (req, res) => {
     res.redirect('/login');
 });
@@ -88,6 +103,9 @@ app.post('/login', async (req, res) => {
         .catch(() => res.status(401).render('pages/login.hbs', {message: 'Invalid username or password!', error: true}));
 });
 
+// *********************************************************************************
+// Register Route Implementation
+// *********************************************************************************
 app.get('/register', (req, res) => {
     res.render('pages/register.hbs', {});
 });
@@ -126,6 +144,9 @@ app.post('/register', async (req, res) => {
     return res.status(201).send({ message: 'User registered successfully', user: newUser });*/
 });
 
+// *********************************************************************************
+// Authentication Middleware (everything below can only be accessed if logged in)
+// *********************************************************************************
 const auth = (req, res, next) => {
     if (!req.session.user) {
         return res.redirect('/login');
@@ -133,7 +154,12 @@ const auth = (req, res, next) => {
     next();
 };
 
-// 🔹 Profile route
+// If you uncomment the line below, please say so in gc and/or the commit message
+// app.use(auth); // Uncomment when we want to require authentication for below routes
+
+// *********************************************************************************
+// Profile Route Implementation
+// *********************************************************************************
 app.get('/profile', (req, res) => {
     if (!req.session.loggedIn) {
         return res.status(401).send({ message: 'Please log in first' });
@@ -144,7 +170,9 @@ app.get('/profile', (req, res) => {
     });
 });
 
-// 🔹 Logout route
+// *********************************************************************************
+// Logout Route Implementation
+// *********************************************************************************
 app.get('/logout', (req, res) => {
     req.session.destroy(err => {
         if (err) {
@@ -155,12 +183,16 @@ app.get('/logout', (req, res) => {
     });
 });
 
-// 🔹 Test route to check rendering
+// *********************************************************************************
+// Test Route (for testing)
+// *********************************************************************************
 app.get('/test', (req, res) => {
     res.render('pages/logout', { success_message: 'Test page!' });
 });
 
-// ★★★ LEADERBOARD IMPLEMENTATION ★★★
+// *********************************************************************************
+// Leaderboard Route Implementation
+// *********************************************************************************
 // This route is protected by the auth middleware.
 app.get('/leaderboard', (req, res) => {
     // Using dummy data for testing without a database connection.
@@ -185,7 +217,60 @@ app.get('/leaderboard', (req, res) => {
         login: req.session && req.session.user
     });
 });
-// ★★★ End of Leaderboard Implementation ★★★
+
+// *********************************************************************************
+// Boss Route Implementation
+// *********************************************************************************
+app.get('/boss', async (req, res) => {
+    try {
+        // // Finds most recent boss to display (assuming the newest boss is the current one)
+        // const idQuery = `SELECT BossID 
+        //                  FROM Boss 
+        //                  ORDER BY BossID 
+        //                  DESC LIMIT 1;`;
+        
+        // const id = await db.one(idQuery);
+
+        // // Queries and returns all info related to the current boss
+        // const bossQuery = `SELECT BossID, Name, HP, MaxHP, Pic, RewardXP, Deadline 
+        //                    FROM Boss WHERE BossID = $1;`;
+        
+        // let results = await db.query(bossQuery, [id]);
+        // if (boss.length == 0) {
+        //     throw new Error("Boss Not Found!");
+        // }
+        // const boss = results[0];
+
+        // Hard coded for testing:
+        const boss = { Name: 'Gains Goblin',
+                       HP: 300,
+                       MaxHP: 500,
+                       Pic: null,
+                       RewardXP: 100,
+                       Deadline: '2025-04-18' };
+
+        // Renders the boss page with quieried info
+        res.render('pages/boss', {
+            message: null,
+            BossImage: boss.Pic,
+            BossName: boss.Name,
+            HP: boss.HP,
+            MaxHP: boss.MaxHP,
+            Reward: boss.RewardXP,
+            Deadline: boss.Deadline
+        });
+    } catch (error) {
+        if (error instanceof pgp.errors.QueryResultError) {
+            res.status(500).render('pages/boss', { error_message: "Database error. Please try again later." });
+        }
+        else if (error.message == "Boss Not Found!") {
+            res.status(404).render('pages/boss', { error_message: "Error querying for boss. Please try again later." });
+        }
+        else {
+            res.status(500).render('pages/boss', { error_message: "Unexpected error." });
+        }
+    }
+});
 
 // 🔹 Export app or run it
 module.exports = app;
