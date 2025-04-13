@@ -1,283 +1,263 @@
-// *********************************************************************************
-// Import Dependencies
-// *********************************************************************************
+require('dotenv').config();
+
 const express = require('express');
 const handlebars = require('express-handlebars');
-const Handlebars = require('handlebars');
 const path = require('path');
-const pgp = require('pg-promise')(); // To connect to the Postgres DB from the node server
+const pgp = require('pg-promise')();
+const session = require('express-session');
 const bodyParser = require('body-parser');
-const session = require('express-session'); // To set the session object. To store or access session data, use the `req.session`, which is (generally) serialized as JSON by the store.
-const bcrypt = require('bcryptjs'); //  To hash passwords
+const bcrypt = require('bcryptjs');
 
 const app = express();
 
-// *********************************************************************************
-// Connect to DB
-// *********************************************************************************
+// ------------------------------
+// View Engine (Handlebars)
+// ------------------------------
 const hbs = handlebars.create({
   extname: 'hbs',
-  layoutsDir: __dirname + '/views/layouts',
-  partialsDir: __dirname + '/views/partials',
+  layoutsDir: path.join(__dirname, 'views', 'layouts'),
+  partialsDir: path.join(__dirname, 'views', 'partials'),
 });
 
-// database configuration
-const dbConfig = {
-    host: 'db', // the database server
-    port: 5432, // the database port
-    database: process.env.POSTGRES_DB, // the database name
-    user: process.env.POSTGRES_USER, // the user account to connect with
-    password: process.env.POSTGRES_PASSWORD, // the password of the user account
-};
-  
-const db = pgp(dbConfig);
-  
-// Commented out the database connection testing to bypass DB access for now.
-// db.connect()
-//   .then(obj => {
-//     console.log('Database connection successful'); // you can view this message in the docker compose logs
-//     obj.done(); // success, release the connection;
-//   })
-//   .catch(error => {
-//     console.log('ERROR:', error.message || error);
-//   });
-
-// *********************************************************************************
-// App Settings
-// *********************************************************************************
-// Register `hbs` as our view engine using its bound `engine()` function.
 app.engine('hbs', hbs.engine);
 app.set('view engine', 'hbs');
 app.set('views', path.join(__dirname, 'views'));
 
+// ------------------------------
+// Middleware
+// ------------------------------
+app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 
 app.use(session({
-    secret: 'developmentSecret',  // Use a secure secret in production
-    resave: false,
-    saveUninitialized: true,
+  secret: 'developmentSecret',
+  resave: false,
+  saveUninitialized: false,
+  cookie: { httpOnly: true, secure: false }
 }));
 
-app.use(
-    bodyParser.urlencoded({
-        extended: true
-    })
-);
+app.use((req, res, next) => {
+  res.locals.loggedIn = !!req.session.user;
+  next();
+});
 
-// *********************************************************************************
-// Welcome Route Implementation
-// *********************************************************************************
+// ------------------------------
+// Database Config
+// ------------------------------
+const dbConfig = {
+  host: 'db',
+  port: 5432,
+  database: process.env.POSTGRES_DB,
+  user: process.env.POSTGRES_USER,
+  password: process.env.POSTGRES_PASSWORD,
+};
 
-// let users = [];
+const db = pgp(dbConfig);
+
+// ------------------------------
+// Routes
+// ------------------------------
+
+app.get('/', (req, res) => {
+  if (req.session.user) return res.redirect('/home');
+  res.redirect('/login');
+});
 
 app.get('/welcome', (req, res) => {
-    res.json({ status: 'success', message: 'Welcome to the API!' });
+  res.json({ status: 'success', message: 'Welcome to the API!' });
 });
 
-// *********************************************************************************
-// Login Route Implementation
-// *********************************************************************************
-app.get('/', (req, res) => {
-    res.redirect('/login');
+// ------------------------------
+// Register
+// ------------------------------
+app.get('/register', (req, res) => {
+  res.render('pages/register');
 });
+app.post('/register', async (req, res) => {
+    const { username, password } = req.body;
+  
+    if (!username || !password) {
+      return res.status(400).render('pages/register', {
+        message: 'Username and password are required',
+        error: true
+      });
+    }
+  
+    if (username.length < 3 || username.length > 50) {
+      return res.status(400).render('pages/register', {
+        message: 'Username must be between 3 and 50 characters',
+        error: true
+      });
+    }
+  
+    if (password.length < 8 || password.length > 50) {
+      return res.status(400).render('pages/register', {
+        message: 'Password must be between 8 and 50 characters',
+        error: true
+      });
+    }
+  
+    try {
+      const existing = await db.oneOrNone('SELECT * FROM Accounts WHERE Username = $1', [username]);
+      if (existing) {
+        return res.status(409).render('pages/register', {
+          message: 'Username already exists',
+          error: true
+        });
+      }
+  
+      const hashedPassword = await bcrypt.hash(password, 10);
+  
+      await db.none(
+        `INSERT INTO Accounts (Username, Password, xp, CurDate, Quest1, Quest2, Quest3)
+         VALUES ($1, $2, 0, CURRENT_DATE, 0, 0, 0)`,
+        [username, hashedPassword]
+      );
+  
+      res.redirect('/login');
+    } catch (err) {
+      console.error('Register error:', err);
+      res.status(500).render('pages/register', {
+        message: 'Internal server error',
+        error: true
+      });
+    }
+  });
+  
 
+
+// ------------------------------
+// Login
+// ------------------------------
 app.get('/login', (req, res) => {
-    res.render('pages/login.hbs', {});
+  res.render('pages/login');
 });
 
 app.post('/login', async (req, res) => {
-    const { username, password } = req.body;
-    if (!username || !password) {
-        return res.status(401).render('pages/login.hbs', {message: 'Username and password are required!', error: true});
+  const { username, password } = req.body;
+
+  if (!username || !password) {
+    return res.status(401).render('pages/login', {
+      message: 'Username and password are required',
+      error: true
+    });
+  }
+
+  try {
+    const user = await db.oneOrNone('SELECT * FROM Accounts WHERE Username = $1', [username]);
+
+    if (!user || !(await bcrypt.compare(password, user.password))) {
+      return res.status(401).render('pages/login', {
+        message: 'Invalid username or password',
+        error: true
+      });
     }
-    const query = `SELECT * FROM users WHERE username = '${username}'`;
-    db.one(query)
-        .then(async (user) => {
-            const isValidPassword = await bcrypt.compare(password, user.password);
-            if (!isValidPassword) {
-                return res.status(401).render('pages/login.hbs', {message: 'Invalid username or password!', error: true});
-            }
-            req.session.user = user;
-            res.redirect('/home');
-        })
-        .catch(() => res.status(401).render('pages/login.hbs', {message: 'Invalid username or password!', error: true}));
+
+    req.session.user = {
+      id: user.accountid,
+      username: user.username,
+      email: user.email || '',
+      xp: user.xp
+    };
+
+    res.redirect('/home');
+  } catch (err) {
+    console.error('Login error:', err);
+    res.status(500).render('pages/login', {
+      message: 'Something went wrong. Try again.',
+      error: true
+    });
+  }
 });
 
-// *********************************************************************************
-// Register Route Implementation
-// *********************************************************************************
-app.get('/register', (req, res) => {
-    res.render('pages/register.hbs', {});
+// ------------------------------
+// Home
+// ------------------------------
+app.get('/home', (req, res) => {
+  if (!req.session.user) return res.redirect('/login');
+
+  res.render('pages/home', {
+    username: req.session.user.username,
+    email: req.session.user.email,
+    xp: req.session.user.xp
+  });
 });
 
-app.post('/register', async (req, res) => {
-    const { username, password, email } = req.body;
-
-    if (!username || !password || !email) {
-        return res.status(400).send({ message: 'All fields are required' });
-    }
-    if (username.length < 3 || username.length > 50) {
-        return res.status(400).render('pages/register.hbs', {message: 'Username must be between 3 and 50 characters long!', error: true});
-    }
-    if (password.length < 8 || password.length > 50) {
-        return res.status(400).render('pages/register.hbs', {message: 'Password must be between 8 and 50 characters long!', error: true});
-    }
-    if (!email.includes('@')) {
-        return res.status(400).render('pages/register.hbs', {message: 'Email must be valid!', error: true});
-    }
-    const hash = await bcrypt.hash(password, 10);
-    const query = `INSERT INTO users (username, password, email) VALUES ('${username}', '${hash}', '${email}')`;
-    db.none(query)
-        //.then(() => res.status(201).redirect('/login'))
-        .then(() => res.status(201).send({ message: 'User registered successfully', user: username }))
-        .catch(() => res.status(500).render('pages/register.hbs', {message: `User ${req.body.username} already exists!`, error: true}));
-
-    /*
-
-    const userExists = users.some(user => user.email === email);
-    if (userExists) {
-        return res.status(409).send({ message: 'User already exists' });
-    }
-
-    const newUser = { username, password, email };
-    users.push(newUser);
-    return res.status(201).send({ message: 'User registered successfully', user: newUser });*/
-});
-
-// *********************************************************************************
-// Authentication Middleware (everything below can only be accessed if logged in)
-// *********************************************************************************
-const auth = (req, res, next) => {
-    if (!req.session.user) {
-        return res.redirect('/login');
-    }
-    next();
-};
-
-// If you uncomment the line below, please say so in gc and/or the commit message
-// app.use(auth); // Uncomment when we want to require authentication for below routes
-
-// *********************************************************************************
-// Profile Route Implementation
-// *********************************************************************************
+// ------------------------------
+// Profile
+// ------------------------------
 app.get('/profile', (req, res) => {
-    if (!req.session.loggedIn) {
-        return res.status(401).send({ message: 'Please log in first' });
+  if (!req.session.user) return res.redirect('/login');
+
+  res.render('pages/home', {
+    username: req.session.user.username,
+    email: req.session.user.email,
+    xp: req.session.user.xp
+  });
+});
+
+// ------------------------------
+// Logout (works with nav form)
+// ------------------------------
+app.post('/logout', (req, res) => {
+  req.session.destroy(err => {
+    if (err) {
+      console.error("Logout error:", err);
+      return res.render('pages/logout', { error_message: "Error logging out. Please try again." });
     }
-    res.status(200).send({
-        message: 'Profile information',
-        user: { username: req.session.username, email: req.session.email }
-    });
+    res.render('pages/logout', { success_message: "Logged out successfully!" });
+  });
 });
 
-// *********************************************************************************
-// Logout Route Implementation
-// *********************************************************************************
-app.get('/logout', (req, res) => {
-    req.session.destroy(err => {
-        if (err) {
-            console.error("Error destroying session:", err);
-            return res.render('pages/logout', { error_message: "Error logging out. Please try again." });
-        }
-        res.render('pages/logout', { success_message: "Logged out successfully!" });
-    });
-});
-
-// *********************************************************************************
-// Test Route (for testing)
-// *********************************************************************************
-app.get('/test', (req, res) => {
-    res.render('pages/logout', { success_message: 'Test page!' });
-});
-
-// *********************************************************************************
-// Leaderboard Route Implementation
-// *********************************************************************************
-// This route is protected by the auth middleware.
+// ------------------------------
+// Leaderboard (test data)
+// ------------------------------
 app.get('/leaderboard', (req, res) => {
-    // Using dummy data for testing without a database connection.
-    const dummyAccounts = [
-        { AccountID: 1, Username: 'Alice', xp: 300 },
-        { AccountID: 2, Username: 'Bob', xp: 250 },
-        { AccountID: 3, Username: 'Charlie', xp: 200 },
-        { AccountID: 4, Username: 'Diane', xp: 150 },
-        { AccountID: 5, Username: 'Ethan', xp: 300 },
-        { AccountID: 6, Username: 'Kyle', xp: 2000 },
-        { AccountID: 7, Username: 'John', xp: 1500 },
-        { AccountID: 8, Username: 'Jacob', xp: 1000 }
+  const users = [
+    { username: 'Kyle', xp: 2000 },
+    { username: 'John', xp: 1500 },
+    { username: 'Jacob', xp: 1000 },
+    { username: 'Alice', xp: 300 }
+  ];
 
-    ];
-    // Calculate rank manually
-    const rankedAccounts = dummyAccounts
-      .sort((a, b) => b.xp - a.xp)
-      .map((account, index) => ({ ...account, rank: index + 1 }));
-    res.render('pages/leaderboard.hbs', {
-        title: 'Leaderboard',
-        users: rankedAccounts,
-        login: req.session && req.session.user
-    });
+  res.render('pages/leaderboard', {
+    title: 'Leaderboard',
+    users,
+    login: !!req.session.user
+  });
 });
 
-// *********************************************************************************
-// Boss Route Implementation
-// *********************************************************************************
-app.get('/boss', async (req, res) => {
-    try {
-        // // Finds most recent boss to display (assuming the newest boss is the current one)
-        // const idQuery = `SELECT BossID 
-        //                  FROM Boss 
-        //                  ORDER BY BossID 
-        //                  DESC LIMIT 1;`;
-        
-        // const id = await db.one(idQuery);
+// ------------------------------
+// Boss Page (optional)
+// ------------------------------
+app.get('/boss', (req, res) => {
+  const boss = {
+    Name: 'Gains Goblin',
+    HP: 300,
+    MaxHP: 500,
+    Pic: null,
+    RewardXP: 100,
+    Deadline: '2025-04-18'
+  };
 
-        // // Queries and returns all info related to the current boss
-        // const bossQuery = `SELECT BossID, Name, HP, MaxHP, Pic, RewardXP, Deadline 
-        //                    FROM Boss WHERE BossID = $1;`;
-        
-        // let results = await db.query(bossQuery, [id]);
-        // if (boss.length == 0) {
-        //     throw new Error("Boss Not Found!");
-        // }
-        // const boss = results[0];
-
-        // Hard coded for testing:
-        const boss = { Name: 'Gains Goblin',
-                       HP: 300,
-                       MaxHP: 500,
-                       Pic: null,
-                       RewardXP: 100,
-                       Deadline: '2025-04-18' };
-
-        // Renders the boss page with quieried info
-        res.render('pages/boss', {
-            message: null,
-            BossImage: boss.Pic,
-            BossName: boss.Name,
-            HP: boss.HP,
-            MaxHP: boss.MaxHP,
-            Reward: boss.RewardXP,
-            Deadline: boss.Deadline
-        });
-    } catch (error) {
-        if (error instanceof pgp.errors.QueryResultError) {
-            res.status(500).render('pages/boss', { error_message: "Database error. Please try again later." });
-        }
-        else if (error.message == "Boss Not Found!") {
-            res.status(404).render('pages/boss', { error_message: "Error querying for boss. Please try again later." });
-        }
-        else {
-            res.status(500).render('pages/boss', { error_message: "Unexpected error." });
-        }
-    }
+  res.render('pages/boss', {
+    BossName: boss.Name,
+    HP: boss.HP,
+    MaxHP: boss.MaxHP,
+    Reward: boss.RewardXP,
+    Deadline: boss.Deadline
+  });
 });
 
-// 🔹 Export app or run it
+// ------------------------------
+// Start Server
+// ------------------------------
 module.exports = app;
 
 if (require.main === module) {
-    const PORT = process.env.PORT || 3000;
-    app.listen(PORT, () => {
-        console.log(`Server running on port ${PORT}`);
-    });
+  const PORT = process.env.PORT || 3000;
+  app.listen(PORT, () => {
+    console.log(`🚀 Server running on http://localhost:${PORT}`);
+  });
 }
