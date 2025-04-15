@@ -1,0 +1,47 @@
+<div class="container py-4">
+    <div class="row row-cols-1 row-cols-md-3 g-4">
+        {{!-- TODO: Add how much xp earnable for each, (maybe animation?), look into quest resetting frontend or backend, test --}}
+        {{!-- Quest 1 --}}
+        <div class="col">
+            <div class="card text-center shadow-sm">
+                <div class="card-body">
+                    <p class="card-title">Log in</p>
+                    <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="1"
+                        data-current="{{Quest1}}" data-max="1">
+                        <div class="progress-bar bg-success"></div>
+                        <span class="progress-text"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{!-- Quest 2 --}}
+        <div class="col">
+            <div class="card text-center shadow-sm">
+                <div class="card-body">
+                    <p class="card-title">Complete 2 Exercises</p>
+                    <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="2"
+                        data-current="{{Quest2}}" data-max="2">
+                        <div class="progress-bar bg-warning"></div>
+                        <span class="progress-text"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{!-- Quest 3 --}}
+        <div class="col">
+            <div class="card text-center shadow-sm">
+                <div class="card-body">
+                    <p class="card-title">Earn 160 XP</p>
+                    <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="160"
+                        data-current="{{Quest3}}" data-max="160">
+                        <div class="progress-bar bg-danger"></div>
+                        <span class="progress-text"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
