@@ -1,18 +1,21 @@
 require('dotenv').config();
-
+// *********************************************************************************
+// Import Dependencies
+// *********************************************************************************
 const express = require('express');
 const handlebars = require('express-handlebars');
 const path = require('path');
-const pgp = require('pg-promise')();
-const session = require('express-session');
+const pgp = require('pg-promise')();  // To connect to the Postgres DB from the node server
+const session = require('express-session');// To set the session object. To store or access session data, use the `req.session`, which is (generally) serialized as JSON by the store.
 const bodyParser = require('body-parser');
-const bcrypt = require('bcryptjs');
+const bcrypt = require('bcryptjs');//  To hash passwords
+
 
 const app = express();
 
-// ------------------------------
-// View Engine (Handlebars)
-// ------------------------------
+// *********************************************************************************
+// Connect to DB
+// *********************************************************************************
 const hbs = handlebars.create({
   extname: 'hbs',
   layoutsDir: path.join(__dirname, 'views', 'layouts'),
@@ -42,9 +45,7 @@ app.use((req, res, next) => {
   next();
 });
 
-// ------------------------------
-// Database Config
-// ------------------------------
+// database configuration
 const dbConfig = {
   host: 'db',
   port: 5432,
@@ -55,10 +56,21 @@ const dbConfig = {
 
 const db = pgp(dbConfig);
 
-// ------------------------------
-// Routes
-// ------------------------------
+  
+// Commented out the database connection testing to bypass DB access for now.
+// db.connect()
+//   .then(obj => {
+//     console.log('Database connection successful'); // you can view this message in the docker compose logs
+//     obj.done(); // success, release the connection;
+//   })
+//   .catch(error => {
+//     console.log('ERROR:', error.message || error);
+//   });
 
+// *********************************************************************************
+// App Settings
+// *********************************************************************************
+// Register `hbs` as our view engine using its bound `engine()` function.
 app.get('/', (req, res) => {
   if (req.session.user) return res.redirect('/home');
   res.redirect('/login');
@@ -198,7 +210,7 @@ app.get('/profile', (req, res) => {
 });
 
 // ------------------------------
-// Logout (works with nav form)
+// Logout 
 // ------------------------------
 app.post('/logout', (req, res) => {
   req.session.destroy(err => {
@@ -231,6 +243,25 @@ app.get('/leaderboard', (req, res) => {
 // ------------------------------
 // Boss Page (optional)
 // ------------------------------
+// // Finds most recent boss to display (assuming the newest boss is the current one)
+        // const idQuery = `SELECT BossID 
+        //                  FROM Boss 
+        //                  ORDER BY BossID 
+        //                  DESC LIMIT 1;`;
+        
+        // const id = await db.one(idQuery);
+
+        // // Queries and returns all info related to the current boss
+        // const bossQuery = `SELECT BossID, Name, HP, MaxHP, Pic, RewardXP, Deadline 
+        //                    FROM Boss WHERE BossID = $1;`;
+        
+        // let results = await db.query(bossQuery, [id]);
+        // if (boss.length == 0) {
+        //     throw new Error("Boss Not Found!");
+        // }
+        // const boss = results[0];
+
+        // Hard coded for testing:
 app.get('/boss', (req, res) => {
   const boss = {
     Name: 'Gains Goblin',
