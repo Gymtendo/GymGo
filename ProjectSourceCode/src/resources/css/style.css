@@ -1,8 +1,10 @@
+/* If on mobile, have navbar display only icons at bottom of page */
 @media (max-width: 768px) {
     .nav-text {display: none;}
     .nav-link {text-align: center; padding: 10px;}
 }
 
+/* If on desktop, have navbar display icons and text at top of page */
 @media (min-width: 769px) {
     .navbar-nav {
         display: flex;
