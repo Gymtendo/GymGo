@@ -242,44 +242,66 @@ app.get('/leaderboard', (req, res) => {
 });
 
 // ------------------------------
-// Boss Page (optional)
+// Boss Page
 // ------------------------------
-// // Finds most recent boss to display (assuming the newest boss is the current one)
-        // const idQuery = `SELECT BossID 
-        //                  FROM Boss 
-        //                  ORDER BY BossID 
-        //                  DESC LIMIT 1;`;
-        
-        // const id = await db.one(idQuery);
+app.get('/boss', async (req, res) => {
+  try {
+    // Hard coded for testing:
+    // const boss = {
+    //   Name: 'Gains Goblin',
+    //   HP: 300,
+    //   MaxHP: 500,
+    //   Pic: null,
+    //   RewardXP: 100,
+    //   Deadline: '2025-04-18'
+    // };
 
-        // // Queries and returns all info related to the current boss
-        // const bossQuery = `SELECT BossID, Name, HP, MaxHP, Pic, RewardXP, Deadline 
-        //                    FROM Boss WHERE BossID = $1;`;
-        
-        // let results = await db.query(bossQuery, [id]);
-        // if (boss.length == 0) {
-        //     throw new Error("Boss Not Found!");
-        // }
-        // const boss = results[0];
+    // Finds most recent boss to display (assuming the newest boss is the current one)
+    const idQuery = `SELECT BossID 
+                     FROM Boss 
+                     ORDER BY BossID 
+                     DESC LIMIT 1;`;
 
-        // Hard coded for testing:
-app.get('/boss', (req, res) => {
-  const boss = {
-    Name: 'Gains Goblin',
-    HP: 300,
-    MaxHP: 500,
-    Pic: null,
-    RewardXP: 100,
-    Deadline: '2025-04-18'
-  };
+    const id = await db.one(idQuery);
+    // console.log(id);
 
-  res.render('pages/boss', {
-    BossName: boss.Name,
-    HP: boss.HP,
-    MaxHP: boss.MaxHP,
-    Reward: boss.RewardXP,
-    Deadline: boss.Deadline
-  });
+    // Queries and returns all info related to the current boss
+    const bossQuery = `SELECT BossID, Name, HP, MaxHP, Pic, RewardXP, Deadline 
+                       FROM Boss WHERE BossID = $1;`;
+
+    const boss = await db.oneOrNone(bossQuery, [id.bossid]);
+    // console.log(boss);
+    if (!boss) {
+      throw new Error("Boss Not Found!");
+    }
+
+    res.render('pages/boss', {
+      BossName: boss.name,
+      HP: boss.hp,
+      MaxHP: boss.maxhp,
+      Reward: boss.rewardxp,
+      Deadline: boss.deadline
+    });
+  } catch (error) {
+    if (error instanceof pgp.errors.QueryResultError) {
+        res.status(500).render('pages/boss', { 
+          message: "Database error. Please try again later.",
+          error: true
+        });
+    }
+    else if (error.message == "Boss Not Found!") {
+        res.status(404).render('pages/boss', { 
+          message: "Error querying for boss. Please try again later.",
+          error: true
+        });
+    }
+    else {
+        res.status(500).render('pages/boss', { 
+          message: "Unexpected error.", 
+          error: true
+        });
+    }
+  }
 });
 
 // ------------------------------
