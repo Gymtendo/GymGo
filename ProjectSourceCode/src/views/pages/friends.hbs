@@ -1,0 +1,19 @@
+<div class="container mt-5">
+  <h1 class="mb-4">Friends</h1>
+  <table class="table table-striped">
+    <thead>
+      <tr>
+        <th scope="col">Username</th>
+        <th scope="col">XP</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{#each users}}
+      <tr>
+        <td>{{Username}}</td>
+        <td>{{xp}}</td>
+      </tr>
+      {{/each}}
+    </tbody>
+  </table>
+</div>

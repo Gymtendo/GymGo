@@ -187,6 +187,16 @@ app.get('/leaderboard', (req, res) => {
 });
 // ★★★ End of Leaderboard Implementation ★★★
 
+app.get('/friends', async(req, res) => {
+    const userID = req.session.user.accountid;
+    const query = `SELECT friend.* FROM AccountFriends af
+    INNER JOIN Accounts you ON af.AccountID = you.AccountID
+    WHERE you.AccountID = ${userID}
+    INNER JOIN Accounts friend ON af.FriendID = friend.AccountID`;
+    const result = await db.any(query);
+    res.render('pages/friends.hbs', {users: result}); 
+});
+
 // 🔹 Export app or run it
 module.exports = app;
 
