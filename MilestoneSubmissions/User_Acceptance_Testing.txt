@@ -16,7 +16,7 @@ Test Data:
   Email: testuser@gymgo.com
   Password: CorrectPass123!
 Expected Result: User is redirected to dashboard/home page
-Actual Result: (TBD)
+Actual Result: Works
 
 Test Case ID: UAT-Login-02
 Description: User attempts login with incorrect password
@@ -24,7 +24,7 @@ Test Data:
   Email: testuser@gymgo.com
   Password: WrongPass123
 Expected Result: Error message: "Invalid email or password"
-Actual Result: (TBD)
+Actual Result: Redirects
 
 Test Case ID: UAT-Login-03
 Description: User leaves email or password field empty
@@ -149,3 +149,38 @@ Mitigation Strategy:
 - Conduct early internal testing before 
 - Maintain open communication within the team through Discord and scheduled meetings
 - Prioritize testing core user stories before stretch features
+add google doc 
+tbd logs
+Software Scribe Doc:
+Team Number: 06
+
+Team Name: Gymtendo
+
+Team Members: Emma Cotrell, Emily Zabron, Ethan Wang, Isaac Mitchell, Kevin Wang
+
+Application Name: GymGo
+
+Application Description:
+Our project GymGo intends to foster a collaborative and consistent gym community by providing an app that promotes daily gym habitation and showcases gym progress. In terms of functionality, we intend to keep a database of users that stores various information such as their daily gym points, people on their friends list, and favorite exercises. You can earn experience/points by going to the gym daily and logging your workouts with reps/weight which will be calculated in some way to return a point value. There will also be a streaks concept to help foster a daily gym experience and weekly challenges or daily multipliers to certain exercises with some room for rest days. You can interact with other users by friending them to track their progress, and compare your work on a weekly friends/global leaderboard. We also intend to include a number of group tasks like group gym goals, boss battles, or other applications where you can contribute your workouts with others to complete a task. To battle, there will be a monster with a certain amount of health and a timeframe to complete the task. You can invite other players onto your raid squad and every time you gain points for a workout, it will contribute a certain amount of damage towards the boss. There may be some group goals or bonuses to increase damage or give more points and all participants will get a reward when the boss is defeated.
+
+We hope that our audience can gain value from our application by making the gym something that’s a part of your daily routine. The daily streak rewards, challenges, and friend interaction will support a positive mentality around the gym and take some of the boring aspects out of your gym experience. In addition to simply tracking your exercises, this program will provide you incentive to branch out, trying new workouts for their multipliers and finding new exercises that interest you. We also intend to use this as a way to track your own progress in the gym, allowing for a more tangible benchmark for progress and adding a piece of healthy competition among friends. Overall, this application seeks to promote healthy lifestyles by gamifying your daily gym activities.
+
+Audience: People who would like to better themselves, using leaderboards for competitions. A fun interactive way of working out with other people.
+
+For [people], Who [want to better themselves and exercise more]. The [Gymtendo] is a [health app] that [motivates you to go to the gym], will make you reach your goals. Unlike [self motivation], our product [will make sure you are consistent with the gym and reach your goals.
+
+8. Version Control:
+https://github.com/Gymtendo/GymGo 
+
+
+9. Development Methodology
+Agile Methodology.
+
+10. Communication Plan: We will be using Discord for communication.
+
+11. Meeting Plan
+
+Team Meeting: Thursday 1:05-2:00 in person, Saturday: 1:00-1:30 on Discord
+Weekly meeting with TA: Friday 5:00pm on Zoom
+
+12. Use Case Diagram:
