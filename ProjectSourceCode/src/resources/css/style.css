@@ -1,13 +1,40 @@
+/* If on mobile, have navbar display only icons at bottom of page */
 @media (max-width: 768px) {
-    .nav-text {display: none;}
-    .nav-link {text-align: center; padding: 10px;}
+    .navbar {
+        position: fixed;
+        bottom: 0;
+        width: 100%;
+        z-index: 999;
+        box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1);
+    }
+
+    .nav-text {
+        display: none;
+    }
+
+    .nav-link {
+        text-align: center;
+        padding: 10px;
+    }
+
+    /* Footer raised a little higher so that it doesn't overlap with the navbar on mobile */
+    footer {
+        padding-bottom: 60px;
+    }
 }
 
+/* If on desktop, have navbar display icons and text at top of page */
 @media (min-width: 769px) {
-    .navbar-nav {
-        display: flex;
-        justify-content: space-around;
+    .navbar {
+        position: fixed;
+        top: 0;
         width: 100%;
+        z-index: 999;
+    }
+
+    /* Body pushed a little lower so that it doesn't overlap with the navbar on desktop */
+    main, .content, body {
+        padding-top: 60px;
     }
 }
 
