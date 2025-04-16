@@ -16,9 +16,9 @@ const app = express();
 // Connect to DB
 // *********************************************************************************
 const hbs = handlebars.create({
-  extname: 'hbs',
-  layoutsDir: __dirname + '/views/layouts',
-  partialsDir: __dirname + '/views/partials',
+    extname: 'hbs',
+    layoutsDir: __dirname + '/views/layouts',
+    partialsDir: __dirname + '/views/partials',
 });
 
 // database configuration
@@ -29,9 +29,9 @@ const dbConfig = {
     user: process.env.POSTGRES_USER, // the user account to connect with
     password: process.env.POSTGRES_PASSWORD, // the password of the user account
 };
-  
+
 const db = pgp(dbConfig);
-  
+
 // Commented out the database connection testing to bypass DB access for now.
 // db.connect()
 //   .then(obj => {
@@ -88,19 +88,19 @@ app.get('/login', (req, res) => {
 app.post('/login', async (req, res) => {
     const { username, password } = req.body;
     if (!username || !password) {
-        return res.status(401).render('pages/login.hbs', {message: 'Username and password are required!', error: true});
+        return res.status(401).render('pages/login.hbs', { message: 'Username and password are required!', error: true });
     }
     const query = `SELECT * FROM users WHERE username = '${username}'`;
     db.one(query)
         .then(async (user) => {
             const isValidPassword = await bcrypt.compare(password, user.password);
             if (!isValidPassword) {
-                return res.status(401).render('pages/login.hbs', {message: 'Invalid username or password!', error: true});
+                return res.status(401).render('pages/login.hbs', { message: 'Invalid username or password!', error: true });
             }
             req.session.user = user;
             res.redirect('/home');
         })
-        .catch(() => res.status(401).render('pages/login.hbs', {message: 'Invalid username or password!', error: true}));
+        .catch(() => res.status(401).render('pages/login.hbs', { message: 'Invalid username or password!', error: true }));
 });
 
 // *********************************************************************************
@@ -117,20 +117,20 @@ app.post('/register', async (req, res) => {
         return res.status(400).send({ message: 'All fields are required' });
     }
     if (username.length < 3 || username.length > 50) {
-        return res.status(400).render('pages/register.hbs', {message: 'Username must be between 3 and 50 characters long!', error: true});
+        return res.status(400).render('pages/register.hbs', { message: 'Username must be between 3 and 50 characters long!', error: true });
     }
     if (password.length < 8 || password.length > 50) {
-        return res.status(400).render('pages/register.hbs', {message: 'Password must be between 8 and 50 characters long!', error: true});
+        return res.status(400).render('pages/register.hbs', { message: 'Password must be between 8 and 50 characters long!', error: true });
     }
     if (!email.includes('@')) {
-        return res.status(400).render('pages/register.hbs', {message: 'Email must be valid!', error: true});
+        return res.status(400).render('pages/register.hbs', { message: 'Email must be valid!', error: true });
     }
     const hash = await bcrypt.hash(password, 10);
     const query = `INSERT INTO users (username, password, email) VALUES ('${username}', '${hash}', '${email}')`;
     db.none(query)
         //.then(() => res.status(201).redirect('/login'))
         .then(() => res.status(201).send({ message: 'User registered successfully', user: username }))
-        .catch(() => res.status(500).render('pages/register.hbs', {message: `User ${req.body.username} already exists!`, error: true}));
+        .catch(() => res.status(500).render('pages/register.hbs', { message: `User ${req.body.username} already exists!`, error: true }));
 
     /*
 
@@ -209,8 +209,8 @@ app.get('/leaderboard', (req, res) => {
     ];
     // Calculate rank manually
     const rankedAccounts = dummyAccounts
-      .sort((a, b) => b.xp - a.xp)
-      .map((account, index) => ({ ...account, rank: index + 1 }));
+        .sort((a, b) => b.xp - a.xp)
+        .map((account, index) => ({ ...account, rank: index + 1 }));
     res.render('pages/leaderboard.hbs', {
         title: 'Leaderboard',
         users: rankedAccounts,
@@ -228,13 +228,13 @@ app.get('/boss', async (req, res) => {
         //                  FROM Boss 
         //                  ORDER BY BossID 
         //                  DESC LIMIT 1;`;
-        
+
         // const id = await db.one(idQuery);
 
         // // Queries and returns all info related to the current boss
         // const bossQuery = `SELECT BossID, Name, HP, MaxHP, Pic, RewardXP, Deadline 
         //                    FROM Boss WHERE BossID = $1;`;
-        
+
         // let results = await db.query(bossQuery, [id]);
         // if (boss.length == 0) {
         //     throw new Error("Boss Not Found!");
@@ -242,12 +242,14 @@ app.get('/boss', async (req, res) => {
         // const boss = results[0];
 
         // Hard coded for testing:
-        const boss = { Name: 'Gains Goblin',
-                       HP: 300,
-                       MaxHP: 500,
-                       Pic: null,
-                       RewardXP: 100,
-                       Deadline: '2025-04-18' };
+        const boss = {
+            Name: 'Gains Goblin',
+            HP: 300,
+            MaxHP: 500,
+            Pic: null,
+            RewardXP: 100,
+            Deadline: '2025-04-18'
+        };
 
         // Renders the boss page with quieried info
         res.render('pages/boss', {
@@ -281,3 +283,70 @@ if (require.main === module) {
         console.log(`Server running on port ${PORT}`);
     });
 }
+
+app.get('/lose-fat', (req, res) => {
+    res.render('pages/lose-fat.hbs', {});
+});
+
+app.get('/lose-fat-gain-muscle', (req, res) => {
+    res.render('pages/lose-fat-gain-muscle.hbs', {});
+});
+
+app.get('/gain-muscle-and-fat', (req, res) => {
+    res.render('pages/gain-muscle-and-fat.hbs', {});
+});
+
+// app.get('/history', (req, res) => {
+//     res.render('pages/history.hbs', {});
+// });
+
+app.get('/history', async (req, res) => {
+    if (!req.session.user) return res.redirect('/login');
+
+    try {
+        const userID = req.session.user.accountid;
+
+        const exercises = await db.any(
+            `SELECT e.*
+             FROM Exercises e
+             JOIN UserExercises ue ON e.ExerciseID = ue.ExerciseID
+             WHERE ue.AccountID = $1
+             ORDER BY e.Date DESC`,
+            [userID]
+        );
+
+        res.render('pages/history.hbs', { exercises });
+    } catch (err) {
+        console.error("Error loading history:", err);
+        res.render('pages/history.hbs', { error_message: 'Failed to load exercises.' });
+    }
+});
+
+app.post('/history', async (req, res) => {
+    if (!req.session.user) return res.redirect('/login');
+
+    const { exerciseName, exerciseXP, timeQuant, amount } = req.body;
+    const userID = req.session.user.accountid;
+
+    try {
+        const result = await db.one(
+            `INSERT INTO Exercises (Date, ExerciseName, ExerciseXP, TimeQuant, Amount)
+             VALUES (CURRENT_DATE, $1, $2, $3, $4)
+             RETURNING ExerciseID`,
+            [exerciseName, parseInt(exerciseXP), timeQuant === 'on', parseInt(amount)]
+        );
+
+        await db.none(
+            `INSERT INTO UserExercises (AccountID, ExerciseID)
+             VALUES ($1, $2)`,
+            [userID, result.exerciseid]
+        );
+
+        res.redirect('/history');
+    } catch (err) {
+        console.error("Error adding exercise:", err);
+        res.status(500).send("Failed to add exercise.");
+    }
+});
+
+//------------------------------------------------------------------
