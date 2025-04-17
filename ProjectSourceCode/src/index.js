@@ -250,7 +250,7 @@ async function getFriends(id) {
 }
 
 app.get('/friends', async(req, res) => {
-    const userID = req.session.user.accountid;
+    const userID = req.session.user.id;
 
    const result = await getFriends(userID);
     console.log(result);
@@ -258,7 +258,7 @@ app.get('/friends', async(req, res) => {
 });
 
 app.post('/friends/add', async(req, res) => {
-    const userID = req.session.user.accountid;
+    const userID = req.session.user.id;
     try {
         const otherUser = await db.one(`SELECT AccountID from Accounts WHERE Accounts.Username = '${req.body.username}'`);
         await db.none(`INSERT INTO AccountFriends (AccountID, FriendID) VALUES (${userID}, ${otherUser.accountid});`);
