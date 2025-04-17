@@ -124,7 +124,7 @@ app.post('/register', async (req, res) => {
   
       await db.none(
         `INSERT INTO Accounts (Username, Password, xp, CurDate, Quest1, Quest2, Quest3)
-         VALUES ($1, $2, 0, CURRENT_DATE, 0, 0, 0)`,
+         VALUES ($1, $2, 0, CURRENT_DATE, 1, 0, 0)`,
         [username, hashedPassword]
       );
   
@@ -187,6 +187,7 @@ app.post('/login', async (req, res) => {
 // ------------------------------
 // Home
 // ------------------------------
+// TODO: Combine /home and /profile (same thing) and get xp from db instead of saving in session since xp may update
 app.get('/home', (req, res) => {
   if (!req.session.user) return res.redirect('/login');
 
@@ -305,6 +306,117 @@ app.get('/boss', async (req, res) => {
     }
     else {
         res.status(500).render('pages/boss', { 
+          message: "Unexpected error.", 
+          error: true
+        });
+    }
+  }
+});
+
+// ------------------------------
+// Quests Page
+// ------------------------------
+app.get('/quests', async (req, res) => {
+  try {
+
+    const id = req.session.user.id;
+    console.log(id);
+    let message = "Quests NOT Reset!";
+
+    // Queries the last user visit to /quests and resets all quest progress if a day has passed 
+    const dateQuery = `SELECT CurDate
+                       FROM Accounts WHERE AccountID = $1;`;
+
+    const date = await db.oneOrNone(dateQuery, [id]);
+    console.log(date);
+    if (!date) {
+      throw new Error("Date Not Found");
+    }
+
+    const lastLoggedDate = date.curdate.toISOString().slice(0, 10);
+    const todaysDate = new Date().toISOString().slice(0, 10);
+
+    // Quest1 will be set to 1 since the user must have logged in today to see this page
+    if (lastLoggedDate !== todaysDate) {
+      const resetQuery = `UPDATE Accounts 
+                          SET CurDate = $1,
+                          Quest1 = 1,
+                          Quest2 = 0,
+                          Quest3 = 0
+                          WHERE AccountID = $2;`;
+
+      await db.none(resetQuery, [todaysDate, id]);
+      message = "Quests Reset!";
+    }
+
+    // Queries the current (or reset) quest progress of the logged in user 
+    const questQuery = `SELECT Quest1, Quest2, Quest3 
+                        FROM Accounts WHERE AccountID = $1;`;
+
+    const questProgress = await db.oneOrNone(questQuery, [id]);
+    if (!questProgress) {
+      throw new Error("Quest Progress Not Found");
+    }
+
+    // If any of the quests are achieved, add the corresponding reward xp to the account
+    let questXP = 0;
+    let questComplete = false;
+
+    // Using == here so that if the user achieved more than the quest, they won't be awarded multiple times
+    if (questProgress.quest1 == 1) {
+      questXP += 20;
+      questComplete = true;
+    }
+    if (questProgress.quest2 == 2) {
+      questXP += 80;
+      questComplete = true;
+    }
+    if (questProgress.quest1 == 160) {
+      questXP += 120;
+      questComplete = true;
+    }
+
+    if (questComplete) {
+      const XPQuery = `SELECT xp
+                       FROM Accounts WHERE AccountID = $1;`;
+
+      const xp = await db.oneOrNone(XPQuery, [id]);
+      if (!xp) {
+        throw new Error("XP Not Found");
+      }
+
+      questXP += xp.xp;
+
+      const addXPQuery = `UPDATE Accounts 
+                       SET xp = $1
+                       WHERE AccountID = $2;`;
+
+      await db.none(addXPQuery, [questXP, id]);
+    }
+
+    res.render('pages/quests', {
+      message: message,
+      error: false,
+      Quest1: questProgress.quest1,
+      Quest2: questProgress.quest2,
+      Quest3: questProgress.quest3
+    });
+
+  } catch (error) {
+    if (error instanceof pgp.errors.QueryResultError) {
+        res.status(500).render('pages/quests', { 
+          message: "Database error. Please try again later.",
+          error: true
+        });
+    }
+    else if (error.message) {
+        res.status(404).render('pages/quests', { 
+          message: error.message + ". Please try again later.",
+          error: true
+        });
+    }
+    else {
+        res.status(500).render('pages/quests', { 
           message: "Unexpected error.", 
           error: true
         });
