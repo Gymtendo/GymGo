@@ -54,8 +54,30 @@ img {
 .progress-text {
     position: absolute;
     width: 100%;
-    text-align: center;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     font-weight: bold;
-    top: 0;
     color: black;
+    z-index: 1;
+}
+
+/* Visual improvements for the progress bar size and the label relative to the bar */
+.progress {
+    position: relative;
+    height: 1.5rem;
+    overflow: hidden;
+    flex-grow: 1;
+}
+
+.progress-label {
+    margin-right: 0.5rem;
+    margin-left: 0.5rem;
+    min-width: 40px;
+}
+
+.progress-bar {
+    width: 0%;
+    transition: width 0.5s ease-in-out;
 }
