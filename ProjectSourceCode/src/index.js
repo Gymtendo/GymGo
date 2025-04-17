@@ -56,7 +56,7 @@ const dbConfig = {
 
 const db = pgp(dbConfig);
 
-  
+
 // Commented out the database connection testing to bypass DB access for now.
 // db.connect()
 //   .then(obj => {
@@ -87,56 +87,56 @@ app.get('/register', (req, res) => {
   res.render('pages/register');
 });
 app.post('/register', async (req, res) => {
-    const { username, password } = req.body;
-  
-    if (!username || !password) {
-      return res.status(400).render('pages/register', {
-        message: 'Username and password are required',
+  const { username, password } = req.body;
+
+  if (!username || !password) {
+    return res.status(400).render('pages/register', {
+      message: 'Username and password are required',
+      error: true
+    });
+  }
+
+  if (username.length < 3 || username.length > 50) {
+    return res.status(400).render('pages/register', {
+      message: 'Username must be between 3 and 50 characters',
+      error: true
+    });
+  }
+
+  if (password.length < 8 || password.length > 50) {
+    return res.status(400).render('pages/register', {
+      message: 'Password must be between 8 and 50 characters',
+      error: true
+    });
+  }
+
+  try {
+    const existing = await db.oneOrNone('SELECT * FROM Accounts WHERE Username = $1', [username]);
+    if (existing) {
+      return res.status(409).render('pages/register', {
+        message: 'Username already exists',
         error: true
       });
     }
-  
-    if (username.length < 3 || username.length > 50) {
-      return res.status(400).render('pages/register', {
-        message: 'Username must be between 3 and 50 characters',
-        error: true
-      });
-    }
-  
-    if (password.length < 8 || password.length > 50) {
-      return res.status(400).render('pages/register', {
-        message: 'Password must be between 8 and 50 characters',
-        error: true
-      });
-    }
-  
-    try {
-      const existing = await db.oneOrNone('SELECT * FROM Accounts WHERE Username = $1', [username]);
-      if (existing) {
-        return res.status(409).render('pages/register', {
-          message: 'Username already exists',
-          error: true
-        });
-      }
-  
-      const hashedPassword = await bcrypt.hash(password, 10);
-  
-      await db.none(
-        `INSERT INTO Accounts (Username, Password, xp, CurDate, Quest1, Quest2, Quest3)
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    await db.none(
+      `INSERT INTO Accounts (Username, Password, xp, CurDate, Quest1, Quest2, Quest3)
          VALUES ($1, $2, 0, CURRENT_DATE, 0, 0, 0)`,
-        [username, hashedPassword]
-      );
-  
-      res.redirect('/login');
-    } catch (err) {
-      console.error('Register error:', err);
-      res.status(500).render('pages/register', {
-        message: 'Internal server error',
-        error: true
-      });
-    }
-  });
-  
+      [username, hashedPassword]
+    );
+
+    res.redirect('/login');
+  } catch (err) {
+    console.error('Register error:', err);
+    res.status(500).render('pages/register', {
+      message: 'Internal server error',
+      error: true
+    });
+  }
+});
+
 
 
 // ------------------------------
@@ -282,24 +282,24 @@ app.post('/friends/add', async(req, res) => {
 // Boss Page (optional)
 // ------------------------------
 // // Finds most recent boss to display (assuming the newest boss is the current one)
-        // const idQuery = `SELECT BossID 
-        //                  FROM Boss 
-        //                  ORDER BY BossID 
-        //                  DESC LIMIT 1;`;
-        
-        // const id = await db.one(idQuery);
+// const idQuery = `SELECT BossID 
+//                  FROM Boss 
+//                  ORDER BY BossID 
+//                  DESC LIMIT 1;`;
 
-        // // Queries and returns all info related to the current boss
-        // const bossQuery = `SELECT BossID, Name, HP, MaxHP, Pic, RewardXP, Deadline 
-        //                    FROM Boss WHERE BossID = $1;`;
-        
-        // let results = await db.query(bossQuery, [id]);
-        // if (boss.length == 0) {
-        //     throw new Error("Boss Not Found!");
-        // }
-        // const boss = results[0];
+// const id = await db.one(idQuery);
 
-        // Hard coded for testing:
+// // Queries and returns all info related to the current boss
+// const bossQuery = `SELECT BossID, Name, HP, MaxHP, Pic, RewardXP, Deadline 
+//                    FROM Boss WHERE BossID = $1;`;
+
+// let results = await db.query(bossQuery, [id]);
+// if (boss.length == 0) {
+//     throw new Error("Boss Not Found!");
+// }
+// const boss = results[0];
+
+// Hard coded for testing:
 app.get('/boss', (req, res) => {
   const boss = {
     Name: 'Gains Goblin',
@@ -330,3 +330,69 @@ if (require.main === module) {
     console.log(`🚀 Server running on http://localhost:${PORT}`);
   });
 }
+app.get('/lose-fat', (req, res) => {
+  res.render('pages/lose-fat.hbs', {});
+});
+
+app.get('/lose-fat-gain-muscle', (req, res) => {
+  res.render('pages/lose-fat-gain-muscle.hbs', {});
+});
+
+app.get('/gain-muscle-and-fat', (req, res) => {
+  res.render('pages/gain-muscle-and-fat.hbs', {});
+});
+
+// app.get('/history', (req, res) => {
+//     res.render('pages/history.hbs', {});
+// });
+
+app.get('/history', async (req, res) => {
+  if (!req.session.user) return res.redirect('/login');
+
+  try {
+    const userID = req.session.user.accountid;
+
+    const exercises = await db.any(
+      `SELECT e.*
+             FROM Exercises e
+             JOIN UserExercises ue ON e.ExerciseID = ue.ExerciseID
+             WHERE ue.AccountID = $1
+             ORDER BY e.Date DESC`,
+      [userID]
+    );
+
+    res.render('pages/history.hbs', { exercises });
+  } catch (err) {
+    console.error("Error loading history:", err);
+    res.render('pages/history.hbs', { error_message: 'Failed to load exercises.' });
+  }
+});
+
+app.post('/history', async (req, res) => {
+  if (!req.session.user) return res.redirect('/login');
+
+  const { exerciseName, exerciseXP, timeQuant, amount } = req.body;
+  const userID = req.session.user.accountid;
+
+  try {
+    const result = await db.one(
+      `INSERT INTO Exercises (Date, ExerciseName, ExerciseXP, TimeQuant, Amount)
+             VALUES (CURRENT_DATE, $1, $2, $3, $4)
+             RETURNING ExerciseID`,
+      [exerciseName, parseInt(exerciseXP), timeQuant === 'on', parseInt(amount)]
+    );
+
+    await db.none(
+      `INSERT INTO UserExercises (AccountID, ExerciseID)
+             VALUES ($1, $2)`,
+      [userID, result.exerciseid]
+    );
+
+    res.redirect('/history');
+  } catch (err) {
+    console.error("Error adding exercise:", err);
+    res.status(500).send("Failed to add exercise.");
+  }
+});
+
+//------------------------------------------------------------------
