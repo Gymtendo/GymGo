@@ -223,22 +223,32 @@ app.post('/logout', (req, res) => {
 });
 
 // ------------------------------
-// Leaderboard (test data)
+// Leaderboard
 // ------------------------------
-app.get('/leaderboard', (req, res) => {
-  const users = [
-    { username: 'Kyle', xp: 2000 },
-    { username: 'John', xp: 1500 },
-    { username: 'Jacob', xp: 1000 },
-    { username: 'Alice', xp: 300 }
-  ];
-
-  res.render('pages/leaderboard', {
-    title: 'Leaderboard',
-    users,
-    login: !!req.session.user
-  });
-});
+app.get('/leaderboard', async (req, res) => {
+    if (!req.session.user) return res.redirect('/login');
+    try {
+      // Pull all accounts ordered by xp descending
+      const users = await db.any(
+        `SELECT "AccountID" AS id,
+                "Username"  AS username,
+                xp
+         FROM "Accounts"
+         ORDER BY xp DESC`
+      );
+      res.render('pages/leaderboard', {
+        title: 'Leaderboard',
+        users,
+        login: res.locals.loggedIn
+      });
+    } catch (err) {
+      console.error('Leaderboard error:', err);
+      res.status(500).render('pages/error', {
+        message: 'Unable to load leaderboard',
+        error: err
+      });
+    }
+  });  
 
 
 async function getFriends(id) {
