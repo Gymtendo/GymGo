@@ -1,0 +1,25 @@
+<div class="container mt-5">
+  <h1 class="mb-4">Friends</h1>
+  <div class="container>
+    <form action="/friends/add" method="POST">
+      <input type="text" name="username" placeholder="add friend..."></input>
+      <input type="submit" value="Add!"></input>
+    </form>
+  </div>
+  <table class="table table-striped">
+    <thead>
+      <tr>
+        <th scope="col">Username</th>
+        <th scope="col">XP</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{#each users}}
+      <tr>
+        <td>{{Username}}</td>
+        <td>{{xp}}</td>
+      </tr>
+      {{/each}}
+    </tbody>
+  </table>
+</div>
