@@ -187,14 +187,31 @@ app.get('/leaderboard', (req, res) => {
 });
 // ★★★ End of Leaderboard Implementation ★★★
 
-app.get('/friends', async(req, res) => {
-    const userID = req.session.user.accountid;
+async function getFriends(id) {
     const query = `SELECT friend.* FROM AccountFriends af
     INNER JOIN Accounts you ON af.AccountID = you.AccountID
-    WHERE you.AccountID = ${userID}
-    INNER JOIN Accounts friend ON af.FriendID = friend.AccountID`;
-    const result = await db.any(query);
+    INNER JOIN Accounts friend ON af.FriendID = friend.AccountID
+    WHERE you.AccountID = ${id}`;
+    return await db.any(query); 
+}
+
+app.get('/friends', async(req, res) => {
+    const userID = req.session.user.accountid;
+
+   const result = await getFriends(userID);
+    console.log(result);
     res.render('pages/friends.hbs', {users: result}); 
+});
+
+app.post('/friends/add', async(req, res) => {
+    const userID = req.session.user.accountid;
+    try {
+        const otherUser = await db.one(`SELECT AccountID from Accounts WHERE Accounts.Username = '${req.body.username}'`);
+        await db.none(`INSERT INTO AccountFriends (AccountID, FriendID) VALUES (${userID}, ${otherUser.accountid});`);
+        res.redirect('/friends');
+    } catch (c) {
+        res.render('pages/friends.hbs', {users: await getFriends(userID), message: `User ${req.body.username} does not exist!`});
+    }
 });
 
 // 🔹 Export app or run it
