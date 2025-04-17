@@ -275,13 +275,21 @@ app.get('/boss', async (req, res) => {
       throw new Error("Boss Not Found!");
     }
 
+    // Date formatter
+    const formattedDeadline = new Date(boss.deadline).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+
     res.render('pages/boss', {
       BossName: boss.name,
       HP: boss.hp,
       MaxHP: boss.maxhp,
       Reward: boss.rewardxp,
-      Deadline: boss.deadline
+      Deadline: formattedDeadline
     });
+
   } catch (error) {
     if (error instanceof pgp.errors.QueryResultError) {
         res.status(500).render('pages/boss', { 
