@@ -1,0 +1,8 @@
+4/11/25
+
+Issac - 2 units tests and friends 
+Emily - worked on css and bootstrap styling for the login logout screen, decided to hardcode constraints but will be changing that as the db rolls out, cleaned up duplicate directories 
+Ethan - leaderboard + database, used implemented sample datatable insertions to test leaderboard.
+Emma - exercise history add/drop 
+Kevin - Implemented the boss webpage frontend (boss.hbs, corresponding css and scripts) and backend /boss API route. Everything working except for the progress bar. Plans to work on quests and database implementation soon.
+complete the navbar before next thursday, try to ramp up
