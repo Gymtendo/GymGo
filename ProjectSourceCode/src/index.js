@@ -283,7 +283,7 @@ async function getFriends(id) {
   const acceptedOut = await db.any(makeQuery('friend.*', 'af.Pending = FALSE AND you.AccountID'));
   const acceptedIn = await db.any(makeQuery('you.*', 'af.Pending = FALSE AND friend.AccountID'));
   const accepted = acceptedOut.concat(acceptedIn);
-  const maxFriends = pendingOut.length + accepted.length >= 1;
+  const maxFriends = pendingOut.length + accepted.length >= 30;
   return {pendingIn, pendingOut, accepted, maxFriends};
 }
 
