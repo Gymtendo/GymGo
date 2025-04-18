@@ -2,8 +2,8 @@
   <h1 class="mb-4">Friends</h1>
   <div class="container">
     <form action="/friends/add" method="POST">
-      <input type="text" name="username" placeholder="add friend..."></input>
-      <input type="submit" value="Add!"></input>
+      <input type="text" name="username" placeholder="add friend..." {{#if users.maxFriends}}disabled title="You already have the maximum number of friends!"{{/if}}></input>
+      <input type="submit" value="Add!" {{#if users.maxFriends}}disabled title="You already have the maximum number of friends!"{{/if}}></input>
     </form>
   </div>
   <table class="table table-striped">
@@ -11,14 +11,65 @@
       <tr>
         <th scope="col">Username</th>
         <th scope="col">XP</th>
+        <th scope="col">Actions</th>
       </tr>
     </thead>
     <tbody>
-      {{#each users}}
+      {{#if users.pendingOut.length}}
+        <tr>
+          <td colspan="3" class="text-center">Outgoing Requests</td>
+        </tr>
+        {{#each users.pendingOut}}
+          <tr>
+            <td>{{username}}</td>
+            <td>{{xp}}</td>
+            <td>
+              <form action="/friends/cancel" method="POST" class="d-inline">
+                <input type="hidden" name="id" value="{{accountid}}"></input>
+                <input type="hidden" name="username" value="{{username}}"></input>
+                <input type="submit" value="Cancel"></input>
+              </form>
+            </td>
+          </tr>
+        {{/each}}
+      {{/if}}
+      {{#if users.pendingIn.length}}
+        <tr>
+          <td colspan="3" class="text-center">Incoming Requests</td>
+        </tr>
+        {{#each users.pendingIn}}
+          <tr>
+            <td>{{username}}</td>
+            <td>{{xp}}</td>
+            <td>
+              <form action="/friends/accept" method="POST" class="d-inline">
+                <input type="hidden" name="id" value="{{accountid}}"></input>
+                <input type="hidden" name="username" value="{{username}}"></input>
+                <input type="submit" value="Accept" {{#if users.maxFriends}}disabled title="You already have the maximum number of friends!"{{/if}}></input>
+              </form>
+              <form action="/friends/reject" method="POST" class="d-inline">
+                <input type="hidden" name="id" value="{{accountid}}"></input>
+                <input type="hidden" name="username" value="{{username}}"></input>
+                <input type="submit" value="Reject"></input>
+            </td>
+          </tr>
+        {{/each}}
+      {{/if}}
       <tr>
-        <td>{{username}}</td>
-        <td>{{xp}}</td>
+        <td colspan="3" class="text-center">Friends</td>
       </tr>
+      {{#each users.accepted}}
+        <tr>
+          <td>{{username}}</td>
+          <td>{{xp}}</td>
+          <td>
+            <form action="/friends/remove" method="POST" class="d-inline">
+              <input type="hidden" name="id" value="{{accountid}}"></input>
+              <input type="hidden" name="username" value="{{username}}"></input>
+              <input type="submit" value="Remove"></input>
+            </form>
+          </td>
+        </tr>
       {{/each}}
     </tbody>
   </table>

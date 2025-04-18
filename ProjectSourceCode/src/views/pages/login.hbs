@@ -1,15 +1,94 @@
-<h1>Login</h1>
+<!DOCTYPE html>
+<html lang="en">
 
-<form action="/login" method="POST">
-  <label for="username">Username: </label>
-  <input type="text" id="username" name="username" required><br><br>
+<head>
+  <meta charset="UTF-8">
+  <title>Login</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      height: 100vh;
+      justify-content: center;
+      align-items: center;
+      margin: 0;
+      background-color: #f4f4f4;
+    }
 
-  <label for="password">Password: </label>
-  <input type="password" id="password" name="password" required><br><br>
+    .login-container {
+      background-color: white;
+      padding: 40px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      text-align: center;
+      width: 300px;
+    }
 
-  <button type="submit">Login</button>
-</form>
+    input[type="text"],
+    input[type="password"] {
+      width: 100%;
+      padding: 10px;
+      margin: 8px 0;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
 
-{{#if message}}
-  <p style="color: red;">{{message}}</p>
-{{/if}}
+    button {
+      padding: 10px 20px;
+      margin-top: 10px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      background-color: #4CAF50;
+      color: white;
+      font-size: 16px;
+    }
+
+    .register-link {
+      margin-top: 20px;
+      display: block;
+      font-size: 14px;
+    }
+
+    .register-link a {
+      color: #2196F3;
+      text-decoration: none;
+    }
+
+    .register-link a:hover {
+      text-decoration: underline;
+    }
+
+    p.message {
+      color: red;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="login-container">
+    <h1>Login</h1>
+    <form action="/login" method="POST">
+      <label for="username">Username:</label><br>
+      <input type="text" id="username" name="username" required><br><br>
+
+      <label for="password">Password:</label><br>
+      <input type="password" id="password" name="password" required><br><br>
+
+      <button type="submit">Login</button>
+    </form>
+
+    {{#if message}}
+    <p class="message">{{message}}</p>
+    {{/if}}
+
+    <div class="register-link">
+      Don't have an account? <a href="/register">Register</a>
+    </div>
+  </div>
+
+</body>
+
+</html>
