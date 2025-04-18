@@ -13,6 +13,13 @@ const bcrypt = require('bcryptjs');//  To hash passwords
 
 const app = express();
 
+// this is for the leaderboard rank so it indexes starting at 1 rather than 0
+const Handlebars = require('handlebars');
+Handlebars.registerHelper('incremented', function (index) {
+  index++;
+  return index;
+})
+
 // *********************************************************************************
 // Connect to DB
 // *********************************************************************************
@@ -226,57 +233,56 @@ app.post('/logout', (req, res) => {
 // ------------------------------
 // Leaderboard
 // ------------------------------
+//helper function for rank to work properly
+
 app.get('/leaderboard', async (req, res) => {
-    if (!req.session.user) return res.redirect('/login');
-    try {
-      // Pull all accounts ordered by xp descending
-      const users = await db.any(
-        `SELECT "AccountID" AS id,
-                "Username"  AS username,
-                xp
-         FROM "Accounts"
-         ORDER BY xp DESC`
-      );
-      res.render('pages/leaderboard', {
-        title: 'Leaderboard',
-        users,
-        login: res.locals.loggedIn
-      });
-    } catch (err) {
-      console.error('Leaderboard error:', err);
-      res.status(500).render('pages/error', {
-        message: 'Unable to load leaderboard',
-        error: err
-      });
-    }
-  });  
+  if (!req.session.user) return res.redirect('/login');
+  try {
+    // Pull all accounts ordered by xp descending
+    const users = await db.any(
+      `SELECT accountID AS id,
+          username,
+          xp
+        FROM accounts
+        ORDER BY xp DESC`
+    );
+    res.render('pages/leaderboard', {
+      title: 'Leaderboard',
+      users,
+      login: res.locals.loggedIn
+    });
+  } catch (err) {
+    console.error('Leaderboard error:', err);
+    res.status(500).send("Unable to load leaderboard.");
+  }
+});
 
 
 async function getFriends(id) {
-    const query = `SELECT friend.* FROM AccountFriends af
+  const query = `SELECT friend.* FROM AccountFriends af
     INNER JOIN Accounts you ON af.AccountID = you.AccountID
     INNER JOIN Accounts friend ON af.FriendID = friend.AccountID
     WHERE you.AccountID = ${id}`;
-    return await db.any(query); 
+  return await db.any(query);
 }
 
-app.get('/friends', async(req, res) => {
-    const userID = req.session.user.id;
+app.get('/friends', async (req, res) => {
+  const userID = req.session.user.id;
 
-   const result = await getFriends(userID);
-    console.log(result);
-    res.render('pages/friends.hbs', {users: result}); 
+  const result = await getFriends(userID);
+  console.log(result);
+  res.render('pages/friends.hbs', { users: result });
 });
 
-app.post('/friends/add', async(req, res) => {
-    const userID = req.session.user.id;
-    try {
-        const otherUser = await db.one(`SELECT AccountID from Accounts WHERE Accounts.Username = '${req.body.username}'`);
-        await db.none(`INSERT INTO AccountFriends (AccountID, FriendID) VALUES (${userID}, ${otherUser.accountid});`);
-        res.redirect('/friends');
-    } catch (c) {
-        res.render('pages/friends.hbs', {users: await getFriends(userID), message: `User ${req.body.username} does not exist!`});
-    }
+app.post('/friends/add', async (req, res) => {
+  const userID = req.session.user.id;
+  try {
+    const otherUser = await db.one(`SELECT AccountID from Accounts WHERE Accounts.Username = '${req.body.username}'`);
+    await db.none(`INSERT INTO AccountFriends (AccountID, FriendID) VALUES (${userID}, ${otherUser.accountid});`);
+    res.redirect('/friends');
+  } catch (c) {
+    res.render('pages/friends.hbs', { users: await getFriends(userID), message: `User ${req.body.username} does not exist!` });
+  }
 });
 
 // ------------------------------
@@ -330,22 +336,22 @@ app.get('/boss', async (req, res) => {
 
   } catch (error) {
     if (error instanceof pgp.errors.QueryResultError) {
-        res.status(500).render('pages/boss', { 
-          message: "Database error. Please try again later.",
-          error: true
-        });
+      res.status(500).render('pages/boss', {
+        message: "Database error. Please try again later.",
+        error: true
+      });
     }
     else if (error.message == "Boss Not Found!") {
-        res.status(404).render('pages/boss', { 
-          message: "Error querying for boss. Please try again later.",
-          error: true
-        });
+      res.status(404).render('pages/boss', {
+        message: "Error querying for boss. Please try again later.",
+        error: true
+      });
     }
     else {
-        res.status(500).render('pages/boss', { 
-          message: "Unexpected error.", 
-          error: true
-        });
+      res.status(500).render('pages/boss', {
+        message: "Unexpected error.",
+        error: true
+      });
     }
   }
 });
@@ -441,22 +447,22 @@ app.get('/quests', async (req, res) => {
 
   } catch (error) {
     if (error instanceof pgp.errors.QueryResultError) {
-        res.status(500).render('pages/quests', { 
-          message: "Database error. Please try again later.",
-          error: true
-        });
+      res.status(500).render('pages/quests', {
+        message: "Database error. Please try again later.",
+        error: true
+      });
     }
     else if (error.message) {
-        res.status(404).render('pages/quests', { 
-          message: error.message + ". Please try again later.",
-          error: true
-        });
+      res.status(404).render('pages/quests', {
+        message: error.message + ". Please try again later.",
+        error: true
+      });
     }
     else {
-        res.status(500).render('pages/quests', { 
-          message: "Unexpected error.", 
-          error: true
-        });
+      res.status(500).render('pages/quests', {
+        message: "Unexpected error.",
+        error: true
+      });
     }
   }
 });
@@ -472,6 +478,7 @@ if (require.main === module) {
     console.log(`Server running on http://localhost:${PORT}`);
   });
 }
+
 app.get('/lose-fat', (req, res) => {
   res.render('pages/lose-fat.hbs', {});
 });
@@ -492,7 +499,7 @@ app.get('/history', async (req, res) => {
   if (!req.session.user) return res.redirect('/login');
 
   try {
-    const userID = req.session.user.accountid;
+    const userID = req.session.user.id;
 
     const exercises = await db.any(
       `SELECT e.*
@@ -514,7 +521,7 @@ app.post('/history', async (req, res) => {
   if (!req.session.user) return res.redirect('/login');
 
   const { exerciseName, exerciseXP, timeQuant, amount } = req.body;
-  const userID = req.session.user.accountid;
+  const userID = req.session.user.id;
 
   try {
     const result = await db.one(
@@ -528,6 +535,13 @@ app.post('/history', async (req, res) => {
       `INSERT INTO UserExercises (AccountID, ExerciseID)
              VALUES ($1, $2)`,
       [userID, result.exerciseid]
+    );
+
+    await db.none(
+      `UPDATE accounts 
+        SET xp = xp + $2 
+        WHERE accountid = $1`,
+      [userID, parseInt(exerciseXP)]
     );
 
     res.redirect('/history');
