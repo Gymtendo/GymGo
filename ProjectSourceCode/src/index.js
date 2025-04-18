@@ -180,6 +180,11 @@ app.post('/login', async (req, res) => {
       xp: user.xp
     };
 
+    if (req.session.desiredPath) {
+      const desiredPath = req.session.desiredPath;
+      delete req.session.desiredPath;
+      return res.redirect(desiredPath);
+    }
     res.redirect('/home');
   } catch (err) {
     console.error('Login error:', err);
@@ -230,6 +235,16 @@ app.post('/logout', (req, res) => {
   });
 });
 
+const auth = (req, res, next) => {
+  if (req.session.user) {
+    next();
+  } else {
+    req.session.desiredPath = req.path;
+    res.redirect('/login');
+  }
+};
+app.use(auth);
+
 // ------------------------------
 // Leaderboard
 // ------------------------------
@@ -259,19 +274,25 @@ app.get('/leaderboard', async (req, res) => {
 
 
 async function getFriends(id) {
-  const query = `SELECT friend.* FROM AccountFriends af
+  const makeQuery = (what, where) => `SELECT ${what} FROM AccountFriends af
     INNER JOIN Accounts you ON af.AccountID = you.AccountID
     INNER JOIN Accounts friend ON af.FriendID = friend.AccountID
-    WHERE you.AccountID = ${id}`;
-  return await db.any(query);
+    WHERE ${where} = ${id}`;
+  const pendingOut = await db.any(makeQuery('friend.*', 'af.Pending = TRUE AND you.AccountID'));
+  const pendingIn = await db.any(makeQuery('you.*', 'af.Pending = TRUE AND friend.AccountID'));
+  const acceptedOut = await db.any(makeQuery('friend.*', 'af.Pending = FALSE AND you.AccountID'));
+  const acceptedIn = await db.any(makeQuery('you.*', 'af.Pending = FALSE AND friend.AccountID'));
+  const accepted = acceptedOut.concat(acceptedIn);
+  return {pendingIn, pendingOut, accepted};
 }
 
 app.get('/friends', async (req, res) => {
   const userID = req.session.user.id;
-
-  const result = await getFriends(userID);
-  console.log(result);
-  res.render('pages/friends.hbs', { users: result });
+  const users = await getFriends(userID);
+  console.log(users);
+  const message = req.session.message || "";
+  req.session.message = "";
+  res.render('pages/friends.hbs', { users, message });
 });
 
 app.post('/friends/add', async (req, res) => {
@@ -279,6 +300,56 @@ app.post('/friends/add', async (req, res) => {
   try {
     const otherUser = await db.one(`SELECT AccountID from Accounts WHERE Accounts.Username = '${req.body.username}'`);
     await db.none(`INSERT INTO AccountFriends (AccountID, FriendID) VALUES (${userID}, ${otherUser.accountid});`);
+    req.session.message = `Friend request sent to ${req.body.username}`;
+    res.redirect('/friends');
+  } catch (c) {
+    res.render('pages/friends.hbs', { users: await getFriends(userID), message: `User ${req.body.username} does not exist!` });
+  }
+});
+
+app.post('/friends/accept', async (req, res) => {
+  const userID = req.session.user.id;
+  const friendID = req.body.id;
+  try {
+    // use db.one to catch if it doesn't work
+    await db.one(`UPDATE AccountFriends SET Pending = FALSE WHERE AccountID = ${friendID} AND FriendID = ${userID} RETURNING *;`);
+    req.session.message = `You are now friends with ${req.body.username}`;
+    res.redirect('/friends');
+  } catch (c) {
+    res.render('pages/friends.hbs', { users: await getFriends(userID), message: `Could not accept  ${req.body.username} does not exist!` });
+  }
+});
+
+app.post('/friends/reject', async (req, res) => {
+  const userID = req.session.user.id;
+  const friendID = req.body.id;
+  try {
+    await db.one(`DELETE FROM AccountFriends WHERE AccountID = ${friendID} AND FriendID = ${userID} AND Pending = TRUE RETURNING *;`);
+    req.session.message = `You rejected ${req.body.username}'s friend request`;
+    res.redirect('/friends');
+  } catch (c) {
+    res.render('pages/friends.hbs', { users: await getFriends(userID), message: `Could not reject ${req.body.username}'s friend request!` });
+  }
+});
+
+app.post('/friends/remove', async (req, res) => {
+  const userID = req.session.user.id;
+  const friendID = req.body.id;
+  try {
+    await db.one(`DELETE FROM AccountFriends WHERE (AccountID = ${userID} AND FriendID = ${friendID}) OR (FriendID = ${friendID} AND AccountID = ${userID}) AND Pending = FALSE RETURNING *;`);
+    req.session.message = `You removed ${req.body.username} from your friends`;
+    res.redirect('/friends');
+  } catch (c) {
+    res.render('pages/friends.hbs', { users: await getFriends(userID), message: `Could not un-friend ${req.body.username}!` });
+  }
+});
+
+app.post('/friends/cancel', async (req, res) => {
+  const userID = req.session.user.id;
+  const friendID = req.body.id;
+  try {
+    await db.one(`DELETE FROM AccountFriends WHERE AccountID = ${userID} AND FriendID = ${friendID} RETURNING *;`);
+    req.session.message = `You canceled your friend request to ${req.body.username}`;
     res.redirect('/friends');
   } catch (c) {
     res.render('pages/friends.hbs', { users: await getFriends(userID), message: `User ${req.body.username} does not exist!` });
