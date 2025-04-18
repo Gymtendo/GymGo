@@ -283,7 +283,8 @@ async function getFriends(id) {
   const acceptedOut = await db.any(makeQuery('friend.*', 'af.Pending = FALSE AND you.AccountID'));
   const acceptedIn = await db.any(makeQuery('you.*', 'af.Pending = FALSE AND friend.AccountID'));
   const accepted = acceptedOut.concat(acceptedIn);
-  return {pendingIn, pendingOut, accepted};
+  const maxFriends = pendingOut.length + accepted.length >= 1;
+  return {pendingIn, pendingOut, accepted, maxFriends};
 }
 
 app.get('/friends', async (req, res) => {
@@ -297,6 +298,11 @@ app.get('/friends', async (req, res) => {
 
 app.post('/friends/add', async (req, res) => {
   const userID = req.session.user.id;
+  const atMax = (await getFriends(userID)).maxFriends;
+  if (atMax) {
+    res.render('pages/friends.hbs', { users: await getFriends(userID), message: "You have reached the maximum number of friends!" });
+    return;
+  }
   try {
     const otherUser = await db.one(`SELECT AccountID from Accounts WHERE Accounts.Username = '${req.body.username}'`);
     await db.none(`INSERT INTO AccountFriends (AccountID, FriendID) VALUES (${userID}, ${otherUser.accountid});`);
@@ -310,6 +316,11 @@ app.post('/friends/add', async (req, res) => {
 app.post('/friends/accept', async (req, res) => {
   const userID = req.session.user.id;
   const friendID = req.body.id;
+  const atMax = (await getFriends(userID)).maxFriends;
+  if (atMax) {
+    res.render('pages/friends.hbs', { users: await getFriends(userID), message: "You have reached the maximum number of friends! Delete one of your current friends to accept this request!" });
+    return;
+  }
   try {
     // use db.one to catch if it doesn't work
     await db.one(`UPDATE AccountFriends SET Pending = FALSE WHERE AccountID = ${friendID} AND FriendID = ${userID} RETURNING *;`);
@@ -336,7 +347,7 @@ app.post('/friends/remove', async (req, res) => {
   const userID = req.session.user.id;
   const friendID = req.body.id;
   try {
-    await db.one(`DELETE FROM AccountFriends WHERE (AccountID = ${userID} AND FriendID = ${friendID}) OR (FriendID = ${friendID} AND AccountID = ${userID}) AND Pending = FALSE RETURNING *;`);
+    await db.one(`DELETE FROM AccountFriends WHERE (AccountID = ${userID} AND FriendID = ${friendID}) OR (AccountID = ${friendID} AND FriendID = ${userID}) AND Pending = FALSE RETURNING *;`);
     req.session.message = `You removed ${req.body.username} from your friends`;
     res.redirect('/friends');
   } catch (c) {

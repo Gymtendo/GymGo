@@ -2,8 +2,8 @@
   <h1 class="mb-4">Friends</h1>
   <div class="container">
     <form action="/friends/add" method="POST">
-      <input type="text" name="username" placeholder="add friend..."></input>
-      <input type="submit" value="Add!"></input>
+      <input type="text" name="username" placeholder="add friend..." {{#if users.maxFriends}}disabled title="You already have the maximum number of friends!"{{/if}}></input>
+      <input type="submit" value="Add!" {{#if users.maxFriends}}disabled title="You already have the maximum number of friends!"{{/if}}></input>
     </form>
   </div>
   <table class="table table-striped">
@@ -24,7 +24,7 @@
             <td>{{username}}</td>
             <td>{{xp}}</td>
             <td>
-              <form action="/friends/cancel" method="POST">
+              <form action="/friends/cancel" method="POST" class="d-inline">
                 <input type="hidden" name="id" value="{{accountid}}"></input>
                 <input type="hidden" name="username" value="{{username}}"></input>
                 <input type="submit" value="Cancel"></input>
@@ -42,11 +42,15 @@
             <td>{{username}}</td>
             <td>{{xp}}</td>
             <td>
-              <form action="/friends/accept" method="POST">
+              <form action="/friends/accept" method="POST" class="d-inline">
                 <input type="hidden" name="id" value="{{accountid}}"></input>
                 <input type="hidden" name="username" value="{{username}}"></input>
                 <input type="submit" value="Accept"></input>
               </form>
+              <form action="/friends/reject" method="POST" class="d-inline">
+                <input type="hidden" name="id" value="{{accountid}}"></input>
+                <input type="hidden" name="username" value="{{username}}"></input>
+                <input type="submit" value="Reject"></input>
             </td>
           </tr>
         {{/each}}
@@ -59,7 +63,7 @@
           <td>{{username}}</td>
           <td>{{xp}}</td>
           <td>
-            <form action="/friends/remove" method="POST">
+            <form action="/friends/remove" method="POST" class="d-inline">
               <input type="hidden" name="id" value="{{accountid}}"></input>
               <input type="hidden" name="username" value="{{username}}"></input>
               <input type="submit" value="Remove"></input>
