@@ -45,7 +45,7 @@
               <form action="/friends/accept" method="POST" class="d-inline">
                 <input type="hidden" name="id" value="{{accountid}}"></input>
                 <input type="hidden" name="username" value="{{username}}"></input>
-                <input type="submit" value="Accept"></input>
+                <input type="submit" value="Accept" {{#if users.maxFriends}}disabled title="You already have the maximum number of friends!"{{/if}}></input>
               </form>
               <form action="/friends/reject" method="POST" class="d-inline">
                 <input type="hidden" name="id" value="{{accountid}}"></input>

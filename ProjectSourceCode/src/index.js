@@ -305,6 +305,10 @@ app.post('/friends/add', async (req, res) => {
   }
   try {
     const otherUser = await db.one(`SELECT AccountID from Accounts WHERE Accounts.Username = '${req.body.username}'`);
+    if (otherUser.accountid === userID) {
+      res.render('pages/friends.hbs', { users: await getFriends(userID), message: "You cannot add yourself as a friend!" });
+      return;
+    }
     await db.none(`INSERT INTO AccountFriends (AccountID, FriendID) VALUES (${userID}, ${otherUser.accountid});`);
     req.session.message = `Friend request sent to ${req.body.username}`;
     res.redirect('/friends');
