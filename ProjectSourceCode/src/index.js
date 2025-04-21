@@ -1,7 +1,7 @@
 require('dotenv').config();
-// *********************************************************************************
+// ------------------------------
 // Import Dependencies
-// *********************************************************************************
+// ------------------------------
 const express = require('express');
 const handlebars = require('express-handlebars');
 const path = require('path');
@@ -20,9 +20,9 @@ Handlebars.registerHelper('incremented', function (index) {
   return index;
 })
 
-// *********************************************************************************
-// Connect to DB
-// *********************************************************************************
+// ------------------------------
+// Setting up Handlebars js
+// ------------------------------
 const hbs = handlebars.create({
   extname: 'hbs',
   layoutsDir: path.join(__dirname, 'views', 'layouts'),
@@ -53,7 +53,9 @@ app.use((req, res, next) => {
   next();
 });
 
-// database configuration
+// ------------------------------
+// Database Configuration
+// ------------------------------
 const dbConfig = {
   host: 'db',
   port: 5432,
@@ -75,9 +77,9 @@ const db = pgp(dbConfig);
 //     console.log('ERROR:', error.message || error);
 //   });
 
-// *********************************************************************************
+// ------------------------------
 // App Settings
-// *********************************************************************************
+// ------------------------------
 // Register `hbs` as our view engine using its bound `engine()` function.
 app.get('/', (req, res) => {
   if (req.session.user) return res.redirect('/home');
@@ -129,6 +131,7 @@ app.post('/register', async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // Quest1 starts at 1 at registration since they will earn the quest xp as soon as they log in
     await db.none(
       `INSERT INTO Accounts (Username, Password, xp, CurDate, Quest1, Quest2, Quest3)
          VALUES ($1, $2, 0, CURRENT_DATE, 1, 0, 0)`,
