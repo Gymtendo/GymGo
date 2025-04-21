@@ -42,7 +42,7 @@ app.use(express.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 app.use(session({
-  secret: 'developmentSecret',
+  secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
   cookie: { httpOnly: true, secure: false }
@@ -55,11 +55,11 @@ app.use((req, res, next) => {
 
 // database configuration
 const dbConfig = {
-  host: 'db',
-  port: 5432,
-  database: process.env.POSTGRES_DB,
   user: process.env.POSTGRES_USER,
+  host: process.env.POSTGRES_HOST,
+  database: process.env.POSTGRES_DB,
   password: process.env.POSTGRES_PASSWORD,
+  port: process.env.POSTGRES_PORT,
 };
 
 const db = pgp(dbConfig);
