@@ -1,27 +1,30 @@
 require('dotenv').config();
+
 // *********************************************************************************
 // Import Dependencies
 // *********************************************************************************
 const express = require('express');
 const handlebars = require('express-handlebars');
 const path = require('path');
-const pgp = require('pg-promise')();  // To connect to the Postgres DB from the node server
-const session = require('express-session');// To set the session object. To store or access session data, use the `req.session`, which is (generally) serialized as JSON by the store.
+const pgp = require('pg-promise')();
+const session = require('express-session');
 const bodyParser = require('body-parser');
-const bcrypt = require('bcryptjs');//  To hash passwords
-
+const bcrypt = require('bcryptjs');
 
 const app = express();
 
-// this is for the leaderboard rank so it indexes starting at 1 rather than 0
+// *********************************************************************************
+// Register Handlebars Helpers
+// *********************************************************************************
 const Handlebars = require('handlebars');
 Handlebars.registerHelper('incremented', function (index) {
-  index++;
-  return index;
-})
+  return index + 1;
+});
+Handlebars.registerHelper('eq', (a, b) => a === b);
+Handlebars.registerHelper('or', (a, b) => a || b);
 
 // *********************************************************************************
-// Connect to DB
+// View Engine Setup
 // *********************************************************************************
 const hbs = handlebars.create({
   extname: 'hbs',
@@ -34,10 +37,9 @@ app.set('view engine', 'hbs');
 app.set('views', path.join(__dirname, 'views'));
 app.use('/resources', express.static(path.join(__dirname, 'resources')));
 
-// ------------------------------
+// *********************************************************************************
 // Middleware
-// ------------------------------
-// app.use(express.static(path.join(__dirname, 'public')));
+// *********************************************************************************
 app.use(express.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
@@ -50,6 +52,7 @@ app.use(session({
 
 app.use((req, res, next) => {
   res.locals.loggedIn = !!req.session.user;
+  res.locals.currentPath = req.path; // ← This enables route-based conditionals in nav
   next();
 });
 
@@ -266,6 +269,7 @@ app.get('/leaderboard', async (req, res) => {
       users,
       login: res.locals.loggedIn
     });
+    
   } catch (err) {
     console.error('Leaderboard error:', err);
     res.status(500).send("Unable to load leaderboard.");
