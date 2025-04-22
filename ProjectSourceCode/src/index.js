@@ -138,7 +138,9 @@ app.post('/register', async (req, res) => {
       [username, hashedPassword]
     );
 
-    res.redirect('/login');
+    req.session.message = "Registration successful! Please log in.";
+    req.session.error = false;
+    res.status(201).redirect('/login');
   } catch (err) {
     console.error('Register error:', err);
     res.status(500).render('pages/register', {
@@ -153,7 +155,16 @@ app.post('/register', async (req, res) => {
 // Login
 // ------------------------------
 app.get('/login', (req, res) => {
-  res.render('pages/login');
+  const error = req.session.error;
+  const message = req.session.message;
+
+  req.session.error = null;
+  req.session.message = null;
+
+  res.render('pages/login', {
+    message: message,
+    error: error
+  });
 });
 
 app.post('/login', async (req, res) => {
@@ -178,9 +189,7 @@ app.post('/login', async (req, res) => {
 
     req.session.user = {
       id: user.accountid,
-      username: user.username,
-      email: user.email || '',
-      xp: user.xp
+      username: user.username
     };
 
     if (req.session.desiredPath) {
@@ -201,15 +210,40 @@ app.post('/login', async (req, res) => {
 // ------------------------------
 // Home
 // ------------------------------
-// TODO: Combine /home and /profile (same thing) and get xp from db instead of saving in session since xp may update
-app.get('/home', (req, res) => {
+// TODO: Combine /home and /profile (same thing)
+app.get('/home', async (req, res) => {
   if (!req.session.user) return res.redirect('/login');
 
-  res.render('pages/home', {
-    username: req.session.user.username,
-    email: req.session.user.email,
-    xp: req.session.user.xp
+  try {
+
+    const id = req.session.user.id
+    const XPQuery = `SELECT xp
+                     FROM Accounts WHERE AccountID = $1;`;
+
+    const xp = await db.oneOrNone(XPQuery, [id]);
+    if (!xp) {
+      throw new Error("XP Not Found");
+    }
+
+    res.render('pages/home', {
+      username: req.session.user.username,
+      xp: xp
   });
+
+  } catch (error) {
+    if (error.message) {
+      res.status(404).render('pages/home', {
+        message: error.message + ". Please try again later.",
+        error: true
+      });
+    }
+    else {
+      res.status(500).render('pages/home', {
+        message: "Unexpected error.",
+        error: true
+      });
+    }
+  }
 });
 
 // ------------------------------
@@ -220,7 +254,6 @@ app.get('/profile', (req, res) => {
 
   res.render('pages/home', {
     username: req.session.user.username,
-    email: req.session.user.email,
     xp: req.session.user.xp
   });
 });
@@ -238,6 +271,9 @@ app.post('/logout', (req, res) => {
   });
 });
 
+// ------------------------------
+// Session Authentication (all routes below require the user to be logged in )
+// ------------------------------
 const auth = (req, res, next) => {
   if (req.session.user) {
     next();
@@ -448,19 +484,20 @@ app.get('/boss', async (req, res) => {
 // ------------------------------
 // Quests Page
 // ------------------------------
+// ALL users will need to visit the /quests page to get xp, even if they meet the requirements for a quest
 app.get('/quests', async (req, res) => {
   try {
 
     const id = req.session.user.id;
-    console.log(id);
-    let message = "Quests NOT Reset!";
+    // console.log(id);
+    // let message = "Quests NOT Reset!";
 
     // Queries the last user visit to /quests and resets all quest progress if a day has passed 
     const dateQuery = `SELECT CurDate
                        FROM Accounts WHERE AccountID = $1;`;
 
     const date = await db.oneOrNone(dateQuery, [id]);
-    console.log(date);
+    // console.log(date);
     if (!date) {
       throw new Error("Date Not Found");
     }
@@ -478,7 +515,7 @@ app.get('/quests', async (req, res) => {
                           WHERE AccountID = $2;`;
 
       await db.none(resetQuery, [todaysDate, id]);
-      message = "Quests Reset!";
+      // message = "Quests Reset!";
     }
 
     // Queries the current (or reset) quest progress of the logged in user 
@@ -509,26 +546,14 @@ app.get('/quests', async (req, res) => {
     }
 
     if (questComplete) {
-      const XPQuery = `SELECT xp
-                       FROM Accounts WHERE AccountID = $1;`;
-
-      const xp = await db.oneOrNone(XPQuery, [id]);
-      if (!xp) {
-        throw new Error("XP Not Found");
-      }
-
-      questXP += xp.xp;
-
       const addXPQuery = `UPDATE Accounts 
-                       SET xp = $1
-                       WHERE AccountID = $2;`;
+                          SET xp = xp + $1
+                          WHERE AccountID = $2;`;
 
       await db.none(addXPQuery, [questXP, id]);
     }
 
     res.render('pages/quests', {
-      message: message,
-      error: false,
       Quest1: questProgress.quest1,
       Quest2: questProgress.quest2,
       Quest3: questProgress.quest3
@@ -628,7 +653,9 @@ app.post('/history', async (req, res) => {
 
     await db.none(
       `UPDATE accounts 
-        SET xp = xp + $2 
+        SET xp = xp + $2,
+        Quest2 = Quest2 + 1,
+        Quest3 = Quest3 + $2
         WHERE accountid = $1`,
       [userID, parseInt(exerciseXP)]
     );
