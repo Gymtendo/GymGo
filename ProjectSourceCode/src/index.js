@@ -19,6 +19,14 @@ Handlebars.registerHelper('incremented', function (index) {
   index++;
   return index;
 })
+//const hbs = require('hbs');
+
+Handlebars.registerHelper('eq', function (a, b) {
+  return a === b;
+});
+
+
+
 
 // ------------------------------
 // Setting up Handlebars js
@@ -42,7 +50,7 @@ app.use(express.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 app.use(session({
-  secret: 'developmentSecret',
+  secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
   cookie: { httpOnly: true, secure: false }
@@ -57,14 +65,29 @@ app.use((req, res, next) => {
 // Database Configuration
 // ------------------------------
 const dbConfig = {
-  host: 'db',
-  port: 5432,
-  database: process.env.POSTGRES_DB,
   user: process.env.POSTGRES_USER,
+  host: process.env.POSTGRES_HOST,
+  database: process.env.POSTGRES_DB,
   password: process.env.POSTGRES_PASSWORD,
+  port: process.env.POSTGRES_PORT,
 };
 
 const db = pgp(dbConfig);
+
+//////////////////////////////////////////////
+app.use((req, res, next) => {
+  if (req.session.user) {
+    res.locals.loggedIn = true;
+    res.locals.username = req.session.user.username;
+    res.locals.xp = req.session.user.xp;
+  } else {
+    res.locals.loggedIn = false;
+    res.locals.username = null;
+    res.locals.xp = null;
+  }
+  next();
+});
+//////////////////////////////////////////////
 
 
 // Commented out the database connection testing to bypass DB access for now.
@@ -89,6 +112,34 @@ app.get('/', (req, res) => {
 app.get('/welcome', (req, res) => {
   res.json({ status: 'success', message: 'Welcome to the API!' });
 });
+
+
+
+// ------------------------------
+// adds xp to profile and it updates
+// ------------------------------
+app.post('/add-exercise', async (req, res) => {
+  const userId = req.session.user.id;
+  const xpEarned = 50; // however much XP this exercise gives
+
+  try {
+    // Update the XP in the database
+    await db.none('UPDATE Accounts SET xp = xp + $1 WHERE accountid = $2', [xpEarned, userId]);
+
+    // OPTIONAL: get the new XP from the DB (if you want to be precise)
+    const updatedUser = await db.one('SELECT xp FROM Accounts WHERE accountid = $1', [userId]);
+
+    // Update the session
+    req.session.user.xp = updatedUser.xp;
+
+    // Redirect or respond
+    res.redirect('/somewhere'); // or send JSON if using AJAX
+  } catch (err) {
+    console.error('Error updating XP:', err);
+    res.status(500).send('Something went wrong');
+  }
+});
+
 
 // ------------------------------
 // Register
@@ -323,7 +374,7 @@ async function getFriends(id) {
   const acceptedIn = await db.any(makeQuery('you.*', 'af.Pending = FALSE AND friend.AccountID'));
   const accepted = acceptedOut.concat(acceptedIn);
   const maxFriends = pendingOut.length + accepted.length >= 30;
-  return {pendingIn, pendingOut, accepted, maxFriends};
+  return { pendingIn, pendingOut, accepted, maxFriends };
 }
 
 app.get('/friends', async (req, res) => {
@@ -593,6 +644,10 @@ if (require.main === module) {
   });
 }
 
+
+// ------------------------------
+// old goals
+// ------------------------------
 app.get('/lose-fat', (req, res) => {
   res.render('pages/lose-fat.hbs', {});
 });
@@ -605,32 +660,9 @@ app.get('/gain-muscle-and-fat', (req, res) => {
   res.render('pages/gain-muscle-and-fat.hbs', {});
 });
 
-// app.get('/history', (req, res) => {
-//     res.render('pages/history.hbs', {});
-// });
-
-app.get('/history', async (req, res) => {
-  if (!req.session.user) return res.redirect('/login');
-
-  try {
-    const userID = req.session.user.id;
-
-    const exercises = await db.any(
-      `SELECT e.*
-             FROM Exercises e
-             JOIN UserExercises ue ON e.ExerciseID = ue.ExerciseID
-             WHERE ue.AccountID = $1
-             ORDER BY e.Date DESC`,
-      [userID]
-    );
-
-    res.render('pages/history.hbs', { exercises });
-  } catch (err) {
-    console.error("Error loading history:", err);
-    res.render('pages/history.hbs', { error_message: 'Failed to load exercises.' });
-  }
-});
-
+// ------------------------------
+// History
+// ------------------------------
 app.post('/history', async (req, res) => {
   if (!req.session.user) return res.redirect('/login');
 
@@ -651,6 +683,7 @@ app.post('/history', async (req, res) => {
       [userID, result.exerciseid]
     );
 
+    // Update the user's XP in the database
     await db.none(
       `UPDATE accounts 
         SET xp = xp + $2,
@@ -660,11 +693,43 @@ app.post('/history', async (req, res) => {
       [userID, parseInt(exerciseXP)]
     );
 
+    // Fetch the updated XP from the database and update the session
+    const user = await db.one(
+      `SELECT xp FROM accounts WHERE accountid = $1`,
+      [userID]
+    );
+
+    // Update the session with the new XP value
+    req.session.user.xp = user.xp;
+
     res.redirect('/history');
   } catch (err) {
     console.error("Error adding exercise:", err);
     res.status(500).send("Failed to add exercise.");
   }
 });
+app.get('/history', async (req, res) => {
+  if (!req.session.user) return res.redirect('/login');
+
+  try {
+    const userID = req.session.user.id;
+
+    const exercises = await db.any(
+      `SELECT e.*
+             FROM Exercises e
+             JOIN UserExercises ue ON e.ExerciseID = ue.ExerciseID
+             WHERE ue.AccountID = $1
+             ORDER BY e.Date DESC`,
+      [userID]
+    );
+
+    // You can now pass the user XP from the session to the view
+    res.render('pages/history.hbs', { exercises, userXP: req.session.user.xp });
+  } catch (err) {
+    console.error("Error loading history:", err);
+    res.render('pages/history.hbs', { error_message: 'Failed to load exercises.' });
+  }
+});
 
 //------------------------------------------------------------------
+

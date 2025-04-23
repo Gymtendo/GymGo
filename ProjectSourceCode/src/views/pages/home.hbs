@@ -1,5 +1,49 @@
-<h1>Welcome, {{username}}!</h1>
-<p>Your email is: {{email}}</p>
-<p>Your XP: {{xp}}</p>
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Welcome</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+
+        .welcome-container {
+            background-color: white;
+            margin: 100px auto 0;
+            /* push content down from top */
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            width: 350px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        p {
+            font-size: 16px;
+            color: #555;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="welcome-container">
+        <h1>Welcome, {{username}}!</h1>
+        <p>Your username is: {{username}}</p>
+        <p>Your XP: {{xp}}</p>
+    </div>
+
+</body>
 
 <p>Remember to visit the quests page to earn your daily log in quest XP!</p>
