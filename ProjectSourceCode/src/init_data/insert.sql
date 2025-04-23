@@ -43,9 +43,9 @@ VALUES
 (4, 'Bike 50 miles total', '2025-04-30', FALSE);
 
 -- Insert sample Bosses
-INSERT INTO Boss (Name, HP, MaxHP, Pic, RewardXP, Deadline)
+INSERT INTO Boss (Name, HP, MaxHP, Pic, RewardXP, Completion, Deadline)
 VALUES 
-('Iron Titan', 0, 500, NULL, 100, '2025-04-18'),
-('Cardio Kraken', 0, 800, NULL, 600, '2025-04-18'),
-('Stretch Serpent', 0, 300, NULL, 225, '2025-04-18'),
-('Gains Goblin', 560, 1000, NULL, 750, '2025-04-18');
+('Iron Titan', 0, 500, NULL, 100, TRUE, '2025-04-18'),
+('Cardio Kraken', 0, 800, NULL, 600, TRUE, '2025-04-18'),
+('Stretch Serpent', 0, 300, NULL, 225, TRUE, '2025-04-18'),
+('Gains Goblin', 560, 1000, NULL, 750, FALSE, '2025-04-18');
