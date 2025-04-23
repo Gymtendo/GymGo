@@ -1,6 +1,9 @@
 {{!-- views/pages/leaderboard.hbs --}}
 <div class="container mt-5">
   <h1 class="mb-4">Leaderboard</h1>
+
+  {{!-- Global Leaderboard --}}
+  <h2 class="mt-4">Global</h2>
   <table class="table table-striped">
     <thead>
       <tr>
@@ -10,7 +13,7 @@
       </tr>
     </thead>
     <tbody>
-      {{#each users}}
+      {{#each global}}
       <tr>
         <td>{{incremented @index}}</td>
         <td>{{username}}</td>
@@ -19,4 +22,29 @@
       {{/each}}
     </tbody>
   </table>
+
+  {{!-- Friends Leaderboard --}}
+  <h2 class="mt-5">Friends</h2>
+  {{#if friends.length}}
+  <table class="table table-striped">
+    <thead>
+      <tr>
+        <th scope="col">Rank</th>
+        <th scope="col">Username</th>
+        <th scope="col">XP</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{#each friends}}
+      <tr>
+        <td>{{incremented @index}}</td>
+        <td>{{username}}</td>
+        <td>{{xp}}</td>
+      </tr>
+      {{/each}}
+    </tbody>
+  </table>
+  {{else}}
+    <p class="text-muted">You have no friends on the leaderboard yet.</p>
+  {{/if}}
 </div>
