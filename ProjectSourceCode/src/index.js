@@ -26,8 +26,6 @@ Handlebars.registerHelper('eq', function (a, b) {
 });
 
 
-
-
 // ------------------------------
 // Setting up Handlebars js
 // ------------------------------
@@ -74,6 +72,7 @@ const dbConfig = {
 
 const db = pgp(dbConfig);
 
+// Expose data to handlebars views if logged in
 //////////////////////////////////////////////
 app.use((req, res, next) => {
   if (req.session.user) {
@@ -116,7 +115,7 @@ app.get('/welcome', (req, res) => {
 
 
 // ------------------------------
-// adds xp to profile and it updates
+// (TEST ROUTE) adds xp to profile and it updates
 // ------------------------------
 app.post('/add-exercise', async (req, res) => {
   const userId = req.session.user.id;
@@ -140,6 +139,8 @@ app.post('/add-exercise', async (req, res) => {
   }
 });
 
+// Fixes error of browser trying to load /favicon.ico
+app.get('/favicon.ico', (req, res) => res.status(204).end());
 
 // ------------------------------
 // Register
@@ -240,7 +241,8 @@ app.post('/login', async (req, res) => {
 
     req.session.user = {
       id: user.accountid,
-      username: user.username
+      username: user.username,
+      xp: user.xp
     };
 
     if (req.session.desiredPath) {
@@ -261,7 +263,6 @@ app.post('/login', async (req, res) => {
 // ------------------------------
 // Home
 // ------------------------------
-// TODO: Combine /home and /profile (same thing)
 app.get('/home', async (req, res) => {
   if (!req.session.user) return res.redirect('/login');
 
@@ -278,7 +279,7 @@ app.get('/home', async (req, res) => {
 
     res.render('pages/home', {
       username: req.session.user.username,
-      xp: xp
+      xp: xp.xp
   });
 
   } catch (error) {
@@ -295,18 +296,6 @@ app.get('/home', async (req, res) => {
       });
     }
   }
-});
-
-// ------------------------------
-// Profile
-// ------------------------------
-app.get('/profile', (req, res) => {
-  if (!req.session.user) return res.redirect('/login');
-
-  res.render('pages/home', {
-    username: req.session.user.username,
-    xp: req.session.user.xp
-  });
 });
 
 // ------------------------------
@@ -562,7 +551,10 @@ app.get('/quests', async (req, res) => {
                           SET CurDate = $1,
                           Quest1 = 1,
                           Quest2 = 0,
-                          Quest3 = 0
+                          Quest3 = 0,
+                          Q1Complete = FALSE,
+                          Q2Complete = FALSE,
+                          Q3Complete = FALSE
                           WHERE AccountID = $2;`;
 
       await db.none(resetQuery, [todaysDate, id]);
@@ -570,7 +562,8 @@ app.get('/quests', async (req, res) => {
     }
 
     // Queries the current (or reset) quest progress of the logged in user 
-    const questQuery = `SELECT Quest1, Quest2, Quest3 
+    const questQuery = `SELECT Quest1, Quest2, Quest3,
+                        Q1Complete, Q2Complete, Q3Complete
                         FROM Accounts WHERE AccountID = $1;`;
 
     const questProgress = await db.oneOrNone(questQuery, [id]);
@@ -580,31 +573,43 @@ app.get('/quests', async (req, res) => {
 
     // If any of the quests are achieved, add the corresponding reward xp to the account
     let questXP = 0;
-    let questComplete = false;
+    let q1Complete = false, q2Complete = false, q3Complete = false;
 
-    // Using == here so that if the user achieved more than the quest, they won't be awarded multiple times
-    if (questProgress.quest1 == 1) {
+
+    // Awards quest xp if the quest hasn't been completed already
+    if (questProgress.quest1 == 1 && !questProgress.q1complete) {
       questXP += 20;
-      questComplete = true;
+      q1Complete = true;
     }
-    if (questProgress.quest2 == 2) {
+    if (questProgress.quest2 >= 2 && !questProgress.q2complete) {
       questXP += 80;
-      questComplete = true;
+      q2Complete = true;
     }
-    if (questProgress.quest1 == 160) {
+    if (questProgress.quest3 >= 160 && !questProgress.q3complete) {
       questXP += 120;
-      questComplete = true;
+      q3Complete = true;
     }
-
-    if (questComplete) {
+    
+    // console.log(q1Complete)
+    // console.log(q2Complete)
+    // console.log(q3Complete)
+    // console.log(questXP)
+    if (q1Complete || q2Complete || q3Complete) {
       const addXPQuery = `UPDATE Accounts 
-                          SET xp = xp + $1
-                          WHERE AccountID = $2;`;
+                          SET xp = xp + $1,
+                          Q1Complete = Q1Complete OR $2,
+                          Q2Complete = Q2Complete OR $3,
+                          Q3Complete = Q3Complete OR $4
+                          WHERE AccountID = $5;`;
 
-      await db.none(addXPQuery, [questXP, id]);
+      await db.none(addXPQuery, [questXP, q1Complete, q2Complete, q3Complete, id]);
+
+      // Update the session with the new XP value
+      req.session.user.xp += questXP;
     }
 
     res.render('pages/quests', {
+      userXP: req.session.user.xp,
       Quest1: questProgress.quest1,
       Quest2: questProgress.quest2,
       Quest3: questProgress.quest3
