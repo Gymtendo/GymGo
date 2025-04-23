@@ -474,30 +474,33 @@ app.get('/boss', async (req, res) => {
       throw new Error("Boss Not Found!");
     }
 
-    // If the deadline has passed
-    let defeated = false;
+    // If boss is defeated before deadline, reward xp to all users, update boss completion status, and pass defeated status to boss.hbs
+    let defeated = boss.completion;
     let expired = false;
-
     const todaysDate = new Date();
-    if (todaysDate > boss.deadline) {
+
+    if (boss.hp <= 0 && !defeated && todaysDate <= boss.deadline) {
+      defeated = true;
+
+      const rewardQuery = `UPDATE Accounts 
+                           SET xp = xp + $1;`;
+
+      await db.none(rewardQuery, [boss.rewardxp]);
+    }
+
+    // If the deadline has passed, reward can no longer be given
+    // Here, mark expired as true if defeated is false for hbs rendering
+    if (!defeated && todaysDate > boss.deadline) {
       expired = true;
+    }
 
-      // If boss is defeated before deadline, reward xp to all users, update boss completion status, and pass defeated status to boss.hbs
-      if (boss.hp <= 0 && !boss.completion) {
-        expired = false;
-        defeated = true;
-
-        const rewardQuery = `UPDATE Accounts 
-                             SET xp = xp + $1;`;
-
-        await db.none(rewardQuery, [boss.rewardxp]);
-      }
-
+    // If the boss has been defeated or the deadline has passed, mark the boss as completed in the db
+    if ((defeated || expired) && !boss.completion) {
       const defeatQuery = `UPDATE Boss 
                            SET Completion = TRUE
                            WHERE BossID = $1;`;
 
-      await db.none(defeatQuery, [id]);
+      await db.none(defeatQuery, [id.bossid]);
     }
 
     // Date formatter
