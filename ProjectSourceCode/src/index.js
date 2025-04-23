@@ -606,6 +606,20 @@ app.get('/quests', async (req, res) => {
 
       // Update the session with the new XP value
       req.session.user.xp += questXP;
+
+      // Subtract the earned xp from the boss hp
+      const bossIDQuery = `SELECT BossID 
+                           FROM Boss 
+                           ORDER BY BossID 
+                           DESC LIMIT 1;`;
+
+      const bossID = await db.one(bossIDQuery);
+
+      const bossQuery = `UPDATE Boss 
+                         SET HP = HP - $1
+                         WHERE BossID = $2;`;
+
+      await db.none(bossQuery, [questXP, bossID.bossid]);
     }
 
     res.render('pages/quests', {
@@ -706,6 +720,20 @@ app.post('/history', async (req, res) => {
 
     // Update the session with the new XP value
     req.session.user.xp = user.xp;
+
+    // Subtract the earned xp from the boss hp
+    const bossIDQuery = `SELECT BossID 
+                         FROM Boss 
+                         ORDER BY BossID 
+                         DESC LIMIT 1;`;
+
+    const bossID = await db.one(bossIDQuery);
+
+    const bossQuery = `UPDATE Boss 
+                       SET HP = HP - $1
+                       WHERE BossID = $2;`;
+
+    await db.none(bossQuery, [parseInt(exerciseXP), bossID.bossid]);
 
     res.redirect('/history');
   } catch (err) {
