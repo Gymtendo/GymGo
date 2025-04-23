@@ -1,6 +1,6 @@
 // ********************** Initialize server **********************************
 
-const server = require('../index'); //TODO: Make sure the path to your index.js is correctly added
+const server = require('../src/index'); //TODO: Make sure the path to your index.js is correctly added
 
 // ********************** Import Libraries ***********************************
 
@@ -21,7 +21,7 @@ describe('Server!', () => {
             .end((err, res) => {
                 expect(res).to.have.status(200);
                 expect(res.body.status).to.equals('success');
-                assert.strictEqual(res.body.message, 'Welcome!');
+                assert.strictEqual(res.body.message, 'Welcome to the API!');
                 done();
             });
     });
