@@ -9,7 +9,7 @@
   "scripts": {
     "prestart": "npm install",
     "start": "nodemon server.js",
-    "test": "NODE_ENV=test mocha --timeout 10000",
+    "test": "cross-env NODE_ENV=test mocha --timeout 10000",
     "testandrun": "npm run prestart && npm start"
   },
   "repository": {
@@ -41,6 +41,7 @@
     "mocha": "^10.8.2",
     "nodemon": "^3.1.0",
     "npm-run-all": "^4.1.5",
-    "supertest": "^7.1.0"
+    "supertest": "^7.1.0",
+    "cross-env": "^7.0.3"
   }
 }
