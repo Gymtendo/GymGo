@@ -1,5 +1,13 @@
-require('dotenv').config();
-// ------------------------------
+// *********************************************************************************
+// Load Environment Variables
+// *********************************************************************************
+if (process.env.NODE_ENV === 'test') {
+  require('dotenv').config({ path: './.env.test' });
+} else {
+  require('dotenv').config();
+}
+
+// *********************************************************************************
 // Import Dependencies
 // ------------------------------
 const express = require('express');
@@ -9,6 +17,7 @@ const pgp = require('pg-promise')();  // To connect to the Postgres DB from the 
 const session = require('express-session');// To set the session object. To store or access session data, use the `req.session`, which is (generally) serialized as JSON by the store.
 const bodyParser = require('body-parser');
 const bcrypt = require('bcryptjs');//  To hash passwords
+
 
 
 const app = express();
@@ -56,6 +65,10 @@ app.use(session({
 
 app.use((req, res, next) => {
   res.locals.loggedIn = !!req.session.user;
+  next();
+});
+app.use((req, res, next) => {
+  res.locals.currentPath = req.path;
   next();
 });
 
@@ -325,31 +338,49 @@ const auth = (req, res, next) => {
 app.use(auth);
 
 // ------------------------------
-// Leaderboard
+// Leaderboard (global + friends including you)
 // ------------------------------
-//helper function for rank to work properly
-
 app.get('/leaderboard', async (req, res) => {
   if (!req.session.user) return res.redirect('/login');
+
   try {
-    // Pull all accounts ordered by xp descending
-    const users = await db.any(
-      `SELECT accountID AS id,
-          username,
-          xp
-        FROM accounts
-        ORDER BY xp DESC`
-    );
+    // 1) GLOBAL leaderboard
+    const allUsers = await db.any(`
+      SELECT accountid   AS id,
+             username,
+             xp
+        FROM Accounts
+    ORDER BY xp DESC
+    `);
+
+    // 2) FRIENDS leaderboard, plus yourself
+    const { accepted } = await getFriends(req.session.user.id);
+
+    // build an array with your user + all accepted friends
+    const friendsWithYou = [
+      { accountid: req.session.user.id,
+        username:  req.session.user.username,
+        xp:        req.session.user.xp },
+      ...accepted
+    ];
+
+    // sort by xp descending
+    friendsWithYou.sort((a, b) => b.xp - a.xp);
+
+    // render both lists
     res.render('pages/leaderboard', {
-      title: 'Leaderboard',
-      users,
-      login: res.locals.loggedIn
+      title:   'Leaderboard',
+      global:  allUsers,
+      friends: friendsWithYou,
+      login:   res.locals.loggedIn
     });
   } catch (err) {
     console.error('Leaderboard error:', err);
-    res.status(500).send("Unable to load leaderboard.");
+    res.status(500).send('Unable to load leaderboard.');
   }
 });
+
+
 
 
 async function getFriends(id) {
