@@ -1,4 +1,4 @@
-// reset.js
+// This file is for resetting the database on render (UNRELATED TO APP ITSELF)
 const { Client } = require('pg');
 
 const client = new Client({
