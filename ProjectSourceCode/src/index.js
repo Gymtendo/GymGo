@@ -709,19 +709,6 @@ app.get('/quests', async (req, res) => {
 });
 
 // ------------------------------
-// Start Server
-// ------------------------------
-module.exports = app;
-
-if (require.main === module) {
-  const PORT = process.env.PORT || 3000;
-  app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
-  });
-}
-
-
-// ------------------------------
 // old goals
 // ------------------------------
 app.get('/lose-fat', (req, res) => {
@@ -820,6 +807,18 @@ app.get('/history', async (req, res) => {
     res.render('pages/history.hbs', { error_message: 'Failed to load exercises.' });
   }
 });
+
+// ------------------------------
+// Start Server
+// ------------------------------
+module.exports = app;
+
+if (require.main === module) {
+  const PORT = process.env.PORT || 3000;
+  app.listen(PORT, () => {
+    console.log(`Server running on http://localhost:${PORT}`);
+  });
+}
 
 //------------------------------------------------------------------
 
