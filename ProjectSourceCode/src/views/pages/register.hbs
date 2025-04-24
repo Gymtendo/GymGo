@@ -58,11 +58,6 @@
     .login-link a:hover {
       text-decoration: underline;
     }
-
-    p.message {
-      color: red;
-      margin-top: 10px;
-    }
   </style>
 </head>
 
@@ -79,10 +74,6 @@
 
       <button type="submit">Register</button>
     </form>
-
-    {{#if error}}
-    <p class="message">{{message}}</p>
-    {{/if}}
 
     <div class="login-link">
       Already have an account? <a href="/login">Login</a>
