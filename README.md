@@ -111,19 +111,28 @@ The live version of GymGo is available at: [https://your-domain.com](https://you
 
 ## API Endpoints
 
-| Method | Route            | Description                   |
-| ------ | ---------------- | ----------------------------- |
-| GET    | `/register`      | Registration page             |
-| POST   | `/register`      | Create new account            |
-| GET    | `/login`         | Login page                    |
-| POST   | `/login`         | Authenticate user             |
-| GET    | `/home`          | User dashboard (protected)    |
-| POST   | `/logout`        | Log out                       |
-| GET    | `/profile`       | View profile (protected)      |
-| GET    | `/leaderboard`   | XP leaderboard (protected)    |
-| GET    | `/friends`       | View friends list (protected) |
-| POST   | `/friends/add`   | Add a friend                  |
-| GET    | `/boss`          | Boss battle page              |
+| Method | Route                    | Description                   |
+| ------ | -------------------------| ----------------------------- |
+| GET    | `/register`              | Registration page             |
+| POST   | `/register`              | Create new account            |
+| GET    | `/login`                 | Login page                    |
+| POST   | `/login`                 | Authenticate user             |
+| GET    | `/home`                  | User dashboard (protected)    |
+| POST   | `/logout`                | Log out                       |
+| GET    | `/leaderboard`           | XP leaderboard (protected)    |
+| GET    | `/friends`               | View friends list (protected) |
+| POST   | `/friends/add`           | Add a friend                  |
+| POST   | `/friends/accept`        | Accept a friend request       |
+| POST   | `/friends/reject`        | Reject a friend request       |
+| POST   | `/friends/remove`        | Remove a friend               |
+| POST   | `/friends/cancel`        | Cancel a friend request       |
+| GET    | `/boss`                  | Boss battle page              |
+| GET    | `/quests`                | Daily quests                  |
+| GET    | `/lose-fat-gain-muscle`  | Recommended workout program   |
+| GET    | `/gain-muscle-and-fat`   | Recommended workout program   |
+| GET    | `/lose-fat`              | Recommended workout program   |
+| GET    | `/history`               | Workout logs                  |
+| POST   | `/history`               | Log a new exercise            |
 
 ---
 

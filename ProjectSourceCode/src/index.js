@@ -381,8 +381,9 @@ app.get('/leaderboard', async (req, res) => {
 });
 
 
-
-
+// ------------------------------
+// Friends (lists and requests)
+// ------------------------------
 async function getFriends(id) {
   const makeQuery = (what, where) => `SELECT ${what} FROM AccountFriends af
     INNER JOIN Accounts you ON af.AccountID = you.AccountID
@@ -482,7 +483,7 @@ app.post('/friends/cancel', async (req, res) => {
 });
 
 // ------------------------------
-// Boss Page
+// Boss
 // ------------------------------
 app.get('/boss', async (req, res) => {
   try {
@@ -579,7 +580,7 @@ app.get('/boss', async (req, res) => {
 });
 
 // ------------------------------
-// Quests Page
+// Quests
 // ------------------------------
 // ALL users will need to visit the /quests page to get xp, even if they meet the requirements for a quest
 app.get('/quests', async (req, res) => {
@@ -709,7 +710,7 @@ app.get('/quests', async (req, res) => {
 });
 
 // ------------------------------
-// old goals
+// Recommended Workout Programs
 // ------------------------------
 app.get('/lose-fat', (req, res) => {
   res.render('pages/lose-fat.hbs', {});
