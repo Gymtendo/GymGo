@@ -24,6 +24,7 @@ GymGo encourages users to make the gym part of their daily routine through gamif
 - **Authentication**: express-session, bcryptjs
 - **Styling**: Bootstrap 5
 - **Containerization**: Docker, Docker Compose
+- **Testing**: Mocha, Chai
 
 ---
 
