@@ -1,15 +1,15 @@
-// *********************************************************************************
+// ------------------------------
 // Load Environment Variables
-// *********************************************************************************
+// ------------------------------
 if (process.env.NODE_ENV === 'test') {
   require('dotenv').config({ path: './.env.test' });
 } else {
   require('dotenv').config();
 }
 
-// *********************************************************************************
+// ------------------------------
 // Import Dependencies
-// *********************************************************************************
+// ------------------------------
 const express = require('express');
 const handlebars = require('express-handlebars');
 const path = require('path');
@@ -35,11 +35,9 @@ Handlebars.registerHelper('eq', function (a, b) {
 });
 
 
-
-
-// *********************************************************************************
-// Connect to DB
-// *********************************************************************************
+// ------------------------------
+// Setting up Handlebars js
+// ------------------------------
 const hbs = handlebars.create({
   extname: 'hbs',
   layoutsDir: path.join(__dirname, 'views', 'layouts'),
@@ -74,7 +72,9 @@ app.use((req, res, next) => {
   next();
 });
 
-// database configuration
+// ------------------------------
+// Database Configuration
+// ------------------------------
 const dbConfig = {
   user: process.env.POSTGRES_USER,
   host: process.env.POSTGRES_HOST,
@@ -85,6 +85,7 @@ const dbConfig = {
 
 const db = pgp(dbConfig);
 
+// Expose data to handlebars views if logged in
 //////////////////////////////////////////////
 app.use((req, res, next) => {
   if (req.session.user) {
@@ -111,9 +112,9 @@ app.use((req, res, next) => {
 //     console.log('ERROR:', error.message || error);
 //   });
 
-// *********************************************************************************
+// ------------------------------
 // App Settings
-// *********************************************************************************
+// ------------------------------
 // Register `hbs` as our view engine using its bound `engine()` function.
 app.get('/', (req, res) => {
   if (req.session.user) return res.redirect('/home');
@@ -127,7 +128,7 @@ app.get('/welcome', (req, res) => {
 
 
 // ------------------------------
-// adds xp to profile and it updates
+// (TEST ROUTE) adds xp to profile and it updates
 // ------------------------------
 app.post('/add-exercise', async (req, res) => {
   const userId = req.session.user.id;
@@ -151,6 +152,8 @@ app.post('/add-exercise', async (req, res) => {
   }
 });
 
+// Fixes error of browser trying to load /favicon.ico
+app.get('/favicon.ico', (req, res) => res.status(204).end());
 
 // ------------------------------
 // Register
@@ -193,13 +196,16 @@ app.post('/register', async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // Quest1 starts at 1 at registration since they will earn the quest xp as soon as they log in
     await db.none(
       `INSERT INTO Accounts (Username, Password, xp, CurDate, Quest1, Quest2, Quest3)
          VALUES ($1, $2, 0, CURRENT_DATE, 1, 0, 0)`,
       [username, hashedPassword]
     );
 
-    res.redirect('/login');
+    req.session.message = "Registration successful! Please log in.";
+    req.session.error = false;
+    res.status(201).redirect('/login');
   } catch (err) {
     console.error('Register error:', err);
     res.status(500).render('pages/register', {
@@ -214,7 +220,16 @@ app.post('/register', async (req, res) => {
 // Login
 // ------------------------------
 app.get('/login', (req, res) => {
-  res.render('pages/login');
+  const error = req.session.error;
+  const message = req.session.message;
+
+  req.session.error = null;
+  req.session.message = null;
+
+  res.render('pages/login', {
+    message: message,
+    error: error
+  });
 });
 
 app.post('/login', async (req, res) => {
@@ -240,7 +255,6 @@ app.post('/login', async (req, res) => {
     req.session.user = {
       id: user.accountid,
       username: user.username,
-      email: user.email || '',
       xp: user.xp
     };
 
@@ -262,28 +276,39 @@ app.post('/login', async (req, res) => {
 // ------------------------------
 // Home
 // ------------------------------
-// TODO: Combine /home and /profile (same thing) and get xp from db instead of saving in session since xp may update
-app.get('/home', (req, res) => {
+app.get('/home', async (req, res) => {
   if (!req.session.user) return res.redirect('/login');
 
-  res.render('pages/home', {
-    username: req.session.user.username,
-    email: req.session.user.email,
-    xp: req.session.user.xp
-  });
-});
+  try {
 
-// ------------------------------
-// Profile
-// ------------------------------
-app.get('/profile', (req, res) => {
-  if (!req.session.user) return res.redirect('/login');
+    const id = req.session.user.id
+    const XPQuery = `SELECT xp
+                     FROM Accounts WHERE AccountID = $1;`;
 
-  res.render('pages/home', {
-    username: req.session.user.username,
-    email: req.session.user.email,
-    xp: req.session.user.xp
+    const xp = await db.oneOrNone(XPQuery, [id]);
+    if (!xp) {
+      throw new Error("XP Not Found");
+    }
+
+    res.render('pages/home', {
+      username: req.session.user.username,
+      xp: xp.xp
   });
+
+  } catch (error) {
+    if (error.message) {
+      res.status(404).render('pages/home', {
+        message: error.message + ". Please try again later.",
+        error: true
+      });
+    }
+    else {
+      res.status(500).render('pages/home', {
+        message: "Unexpected error.",
+        error: true
+      });
+    }
+  }
 });
 
 // ------------------------------
@@ -299,6 +324,9 @@ app.post('/logout', (req, res) => {
   });
 });
 
+// ------------------------------
+// Session Authentication (all routes below require the user to be logged in )
+// ------------------------------
 const auth = (req, res, next) => {
   if (req.session.user) {
     next();
@@ -458,16 +486,6 @@ app.post('/friends/cancel', async (req, res) => {
 // ------------------------------
 app.get('/boss', async (req, res) => {
   try {
-    // Hard coded for testing:
-    // const boss = {
-    //   Name: 'Gains Goblin',
-    //   HP: 300,
-    //   MaxHP: 500,
-    //   Pic: null,
-    //   RewardXP: 100,
-    //   Deadline: '2025-04-18'
-    // };
-
     // Finds most recent boss to display (assuming the newest boss is the current one)
     const idQuery = `SELECT BossID 
                      FROM Boss 
@@ -478,13 +496,45 @@ app.get('/boss', async (req, res) => {
     // console.log(id);
 
     // Queries and returns all info related to the current boss
-    const bossQuery = `SELECT BossID, Name, HP, MaxHP, Pic, RewardXP, Deadline 
+    const bossQuery = `SELECT BossID, Name, HP, MaxHP, Pic, RewardXP, Completion, Deadline 
                        FROM Boss WHERE BossID = $1;`;
 
     const boss = await db.oneOrNone(bossQuery, [id.bossid]);
     // console.log(boss);
     if (!boss) {
       throw new Error("Boss Not Found!");
+    }
+
+    // If boss is defeated before deadline, reward xp to all users, update boss completion status, and pass defeated status to boss.hbs
+    let defeated = boss.completion;
+    let expired = false;
+    const todaysDate = new Date();
+
+    if (boss.hp <= 0 && !defeated && todaysDate <= boss.deadline) {
+      defeated = true;
+
+      const rewardQuery = `UPDATE Accounts 
+                           SET xp = xp + $1;`;
+
+      await db.none(rewardQuery, [boss.rewardxp]);
+
+      // Update the session with the new XP value
+      req.session.user.xp += boss.rewardxp;
+    }
+
+    // If the deadline has passed, reward can no longer be given
+    // Here, mark expired as true if defeated is false for hbs rendering
+    if (!defeated && todaysDate > boss.deadline) {
+      expired = true;
+    }
+
+    // If the boss has been defeated or the deadline has passed, mark the boss as completed in the db
+    if ((defeated || expired) && !boss.completion) {
+      const defeatQuery = `UPDATE Boss 
+                           SET Completion = TRUE
+                           WHERE BossID = $1;`;
+
+      await db.none(defeatQuery, [id.bossid]);
     }
 
     // Date formatter
@@ -495,11 +545,15 @@ app.get('/boss', async (req, res) => {
     });
 
     res.render('pages/boss', {
+      xp: req.session.user.xp,
       BossName: boss.name,
       HP: boss.hp,
       MaxHP: boss.maxhp,
+      BossImage: boss.pic,
       Reward: boss.rewardxp,
-      Deadline: formattedDeadline
+      defeated,
+      Deadline: formattedDeadline,
+      expired
     });
 
   } catch (error) {
@@ -527,19 +581,20 @@ app.get('/boss', async (req, res) => {
 // ------------------------------
 // Quests Page
 // ------------------------------
+// ALL users will need to visit the /quests page to get xp, even if they meet the requirements for a quest
 app.get('/quests', async (req, res) => {
   try {
 
     const id = req.session.user.id;
-    console.log(id);
-    let message = "Quests NOT Reset!";
+    // console.log(id);
+    // let message = "Quests NOT Reset!";
 
     // Queries the last user visit to /quests and resets all quest progress if a day has passed 
     const dateQuery = `SELECT CurDate
                        FROM Accounts WHERE AccountID = $1;`;
 
     const date = await db.oneOrNone(dateQuery, [id]);
-    console.log(date);
+    // console.log(date);
     if (!date) {
       throw new Error("Date Not Found");
     }
@@ -553,15 +608,19 @@ app.get('/quests', async (req, res) => {
                           SET CurDate = $1,
                           Quest1 = 1,
                           Quest2 = 0,
-                          Quest3 = 0
+                          Quest3 = 0,
+                          Q1Complete = FALSE,
+                          Q2Complete = FALSE,
+                          Q3Complete = FALSE
                           WHERE AccountID = $2;`;
 
       await db.none(resetQuery, [todaysDate, id]);
-      message = "Quests Reset!";
+      // message = "Quests Reset!";
     }
 
     // Queries the current (or reset) quest progress of the logged in user 
-    const questQuery = `SELECT Quest1, Quest2, Quest3 
+    const questQuery = `SELECT Quest1, Quest2, Quest3,
+                        Q1Complete, Q2Complete, Q3Complete
                         FROM Accounts WHERE AccountID = $1;`;
 
     const questProgress = await db.oneOrNone(questQuery, [id]);
@@ -571,43 +630,57 @@ app.get('/quests', async (req, res) => {
 
     // If any of the quests are achieved, add the corresponding reward xp to the account
     let questXP = 0;
-    let questComplete = false;
+    let q1Complete = false, q2Complete = false, q3Complete = false;
 
-    // Using == here so that if the user achieved more than the quest, they won't be awarded multiple times
-    if (questProgress.quest1 == 1) {
+
+    // Awards quest xp if the quest hasn't been completed already
+    if (questProgress.quest1 == 1 && !questProgress.q1complete) {
       questXP += 20;
-      questComplete = true;
+      q1Complete = true;
     }
-    if (questProgress.quest2 == 2) {
+    if (questProgress.quest2 >= 2 && !questProgress.q2complete) {
       questXP += 80;
-      questComplete = true;
+      q2Complete = true;
     }
-    if (questProgress.quest1 == 160) {
+    if (questProgress.quest3 >= 160 && !questProgress.q3complete) {
       questXP += 120;
-      questComplete = true;
+      q3Complete = true;
     }
-
-    if (questComplete) {
-      const XPQuery = `SELECT xp
-                       FROM Accounts WHERE AccountID = $1;`;
-
-      const xp = await db.oneOrNone(XPQuery, [id]);
-      if (!xp) {
-        throw new Error("XP Not Found");
-      }
-
-      questXP += xp.xp;
-
+    
+    // console.log(q1Complete)
+    // console.log(q2Complete)
+    // console.log(q3Complete)
+    // console.log(questXP)
+    if (q1Complete || q2Complete || q3Complete) {
       const addXPQuery = `UPDATE Accounts 
-                       SET xp = $1
-                       WHERE AccountID = $2;`;
+                          SET xp = xp + $1,
+                          Q1Complete = Q1Complete OR $2,
+                          Q2Complete = Q2Complete OR $3,
+                          Q3Complete = Q3Complete OR $4
+                          WHERE AccountID = $5;`;
 
-      await db.none(addXPQuery, [questXP, id]);
+      await db.none(addXPQuery, [questXP, q1Complete, q2Complete, q3Complete, id]);
+
+      // Update the session with the new XP value
+      req.session.user.xp += questXP;
+
+      // Subtract the earned xp from the boss hp
+      const bossIDQuery = `SELECT BossID 
+                           FROM Boss 
+                           ORDER BY BossID 
+                           DESC LIMIT 1;`;
+
+      const bossID = await db.one(bossIDQuery);
+
+      const bossQuery = `UPDATE Boss 
+                         SET HP = HP - $1
+                         WHERE BossID = $2;`;
+
+      await db.none(bossQuery, [questXP, bossID.bossid]);
     }
 
     res.render('pages/quests', {
-      message: message,
-      error: false,
+      xp: req.session.user.xp,
       Quest1: questProgress.quest1,
       Quest2: questProgress.quest2,
       Quest3: questProgress.quest3
@@ -689,7 +762,9 @@ app.post('/history', async (req, res) => {
     // Update the user's XP in the database
     await db.none(
       `UPDATE accounts 
-        SET xp = xp + $2 
+        SET xp = xp + $2,
+        Quest2 = Quest2 + 1,
+        Quest3 = Quest3 + $2
         WHERE accountid = $1`,
       [userID, parseInt(exerciseXP)]
     );
@@ -702,6 +777,20 @@ app.post('/history', async (req, res) => {
 
     // Update the session with the new XP value
     req.session.user.xp = user.xp;
+
+    // Subtract the earned xp from the boss hp
+    const bossIDQuery = `SELECT BossID 
+                         FROM Boss 
+                         ORDER BY BossID 
+                         DESC LIMIT 1;`;
+
+    const bossID = await db.one(bossIDQuery);
+
+    const bossQuery = `UPDATE Boss 
+                       SET HP = HP - $1
+                       WHERE BossID = $2;`;
+
+    await db.none(bossQuery, [parseInt(exerciseXP), bossID.bossid]);
 
     res.redirect('/history');
   } catch (err) {
