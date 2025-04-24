@@ -517,6 +517,9 @@ app.get('/boss', async (req, res) => {
                            SET xp = xp + $1;`;
 
       await db.none(rewardQuery, [boss.rewardxp]);
+
+      // Update the session with the new XP value
+      req.session.user.xp += boss.rewardxp;
     }
 
     // If the deadline has passed, reward can no longer be given
@@ -542,6 +545,7 @@ app.get('/boss', async (req, res) => {
     });
 
     res.render('pages/boss', {
+      xp: req.session.user.xp,
       BossName: boss.name,
       HP: boss.hp,
       MaxHP: boss.maxhp,
@@ -676,7 +680,7 @@ app.get('/quests', async (req, res) => {
     }
 
     res.render('pages/quests', {
-      userXP: req.session.user.xp,
+      xp: req.session.user.xp,
       Quest1: questProgress.quest1,
       Quest2: questProgress.quest2,
       Quest3: questProgress.quest3
