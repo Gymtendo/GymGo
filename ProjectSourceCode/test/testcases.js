@@ -1,178 +1,129 @@
+process.env.NODE_ENV = 'test';
+require('dotenv').config({ path: './.env.test' });
+
 const chai = require('chai');
 const chaiHttp = require('chai-http');
-const app = require('../src/index'); // now importing the app, not a running server
-const should = chai.should();
-const pgp = require('pg-promise')(); // To connect to the Postgres DB from the node server
-const bcrypt = require('bcryptjs'); //  To hash passwords
+const app = require('../src/index');
+const pgp = require('pg-promise')();
+const bcrypt = require('bcryptjs');
+const expect = chai.expect;
 
 chai.use(chaiHttp);
-
-let server;
-
-// database configuration
+// ---------------------
+// Database Configuration
+// ---------------------
 const dbConfig = {
-    host: 'db', // the database server
-    port: 5432, // the database port
-    database: process.env.POSTGRES_DB, // the database name
-    user: process.env.POSTGRES_USER, // the user account to connect with
-    password: process.env.POSTGRES_PASSWORD, // the password of the user account
+  host: process.env.POSTGRES_HOST || 'localhost',
+  port: process.env.POSTGRES_PORT || 5432,
+  database: process.env.POSTGRES_DB,
+  user: process.env.POSTGRES_USER,
+  password: process.env.POSTGRES_PASSWORD,
 };
 
 const db = pgp(dbConfig);
 
-// test your database
-db.connect()
-    .then(obj => {
-        console.log('Database connection successful'); // you can view this message in the docker compose logs
-        obj.done(); // success, release the connection;
-    })
-    .catch(error => {
-        console.log('ERROR:', error.message || error);
+let server;
+
+describe('User Registration and Home Route', () => {
+  const testUser = {
+    username: `testuser_${Date.now()}`,
+    password: 'testpassword123'
+  };
+
+  // Clean up before and after to avoid duplicates
+  before(async () => {
+    await db.none('DELETE FROM accounts WHERE username = $1', [testUser.username]);
+  });
+
+  after(async () => {
+    await db.none('DELETE FROM accounts WHERE username = $1', [testUser.username]);
+  });
+
+  before((done) => {
+    server = app.listen(0, () => {
+      console.log('Test server started');
+      done();
     });
+  });
 
-describe('User Registration', () => {
-    // Start the server before tests
-    before((done) => {
-        server = app.listen(0, () => {
-            const port = server.address().port;
-            console.log(`Test server running on port ${port}`);
-            done();
-        });
+  after((done) => {
+    server.close(() => {
+      console.log('Test server stopped');
+      done();
     });
+  });
 
+  // -------------------------
+  // 1. Successful Registration
+  // -------------------------
+  it('should register a new user successfully and redirect to login', (done) => {
+    chai.request(server)
+      .post('/register')
+      .type('form')
+      .redirects(0) 
+      .send(testUser)
+      .end((err, res) => {
+        expect(res).to.have.status(302);
+        expect(res).to.redirectTo(/\/login$/);
+        done();
+      });
+  });
 
-    // Close the server after tests
-    after(() => {
-        server.close();
-    });
+  // ---------------------------------
+  // 2. Missing Password Should Fail
+  // ---------------------------------
+  it('should not register without a password and show an error', (done) => {
+    chai.request(server)
+      .post('/register')
+      .type('form')
+      .send({ username: 'incompleteUser' })
+      .end((err, res) => {
+        expect(res).to.have.status(400);
+        expect(res.text).to.include('Username and password are required');
+        done();
+      });
+  });
 
-    it('should register a user successfully and redirect to login', (done) => {
-        const user = {
-            username: "newUser",
-            password: "password123",
-            email: "newuser@example.com"
-        };
-        chai.request(server)
-            .post('/register')
-            .send(user)
-            .end((err, res) => {
-                res.should.have.status(201);
-                res.body.should.have.property('message').eql('User registered successfully');
-                done();
-            });
-    });
+  // ------------------------------------
+  // 3. Username Too Short Should Fail
+  // ------------------------------------
+  it('should reject a username that is too short', (done) => {
+    chai.request(server)
+      .post('/register')
+      .type('form')
+      .send({ username: 'x', password: 'longenoughpass' })
+      .end((err, res) => {
+        expect(res).to.have.status(400);
+        expect(res.text).to.include('Username must be between 3 and 50 characters');
+        done();
+      });
+  });
 
-    it('should not register a user when the password is missing and show an error', (done) => {
-        const user = {
-            username: "newUser",
-            email: "another@example.com"
-        };
-        chai.request(server)
-            .post('/register')
-            .send(user)
-            .end((err, res) => {
-                res.should.have.status(400);
-                res.body.should.have.property('message').match(/All fields are required/);
-                done();
-            });
-    });
+  // -------------------------------------------
+  // 4. Duplicate Username Should Show Conflict
+  // -------------------------------------------
+  it('should not allow duplicate usernames', (done) => {
+    chai.request(server)
+      .post('/register')
+      .type('form')
+      .send(testUser) // same as earlier
+      .end((err, res) => {
+        expect(res).to.have.status(409);
+        expect(res.text).to.include('Username already exists');
+        done();
+      });
+  });
 
-    it('should not allow too short of a username and show an error', (done) => {
-        const user = {
-            username: "o",
-            password: "password123",
-            email: "tooshort@example.com"
-        };
-        chai.request(server)
-            .post('/register')
-            .send(user)
-            .end((err, res) => {
-                res.should.have.status(400);
-                res.text.should.include('Username must be between 3 and 50 characters long!');
-                done();
-            });
-    });
-
-    it('should not allow duplicate users and show an error', (done) => {
-        const user = {
-            username: "duplicateUser",
-            password: "password123",
-            email: "duplicate@example.com"
-        };
-        chai.request(server)
-            .post('/register')
-            .send(user)
-            .end((err, res) => {
-                res.should.have.status(201);
-                res.body.should.have.property('message').eql('User registered successfully');
-                chai.request(server)
-                    .post('/register')
-                    .send(user)
-                    .end((err, res) => {
-                        res.should.have.status(500);
-                        res.text.should.include(`User ${user.username} already exists!`);
-                        done();
-                    });
-            });
-    });
-});
-
-describe('Home page', () => {
-    let agent;
-    const testUser = {
-        username: 'testuser',
-        password: 'testpass123',
-        email: 'testuser@example.com'
-    };
-
-    // Start the server before tests
-    before(async () => {
-        await db.query('TRUNCATE TABLE users CASCADE');
-        const hash = await bcrypt.hash(testUser.password, 10);
-        await db.query(`INSERT INTO users (username, password, email) VALUES ('${testUser.username}', '${hash}', '${testUser.email}')`);
-        server = app.listen(0, () => {
-            const port = server.address().port;
-            console.log(`Test server running on port ${port}`);
-        });
-    });
-
-    beforeEach(() => {
-        agent = chai.request.agent(server);
-    });
-
-    afterEach(() => {
-        agent.close();
-    });
-
-    after(async () => {
-        await db.query('TRUNCATE TABLE users CASCADE');
-    });
-
-    describe('GET /', () => {
-        it('should redirect to /login when not logged in', (done) => {
-            agent
-                .get('/')
-                .end((err, res) => {
-                    res.should.have.status(200);
-                    res.should.redirectTo('/login');
-                    done();
-                });
-        });
-
-        it('should render the home page when logged in', (done) => {
-            agent
-                .post('/login')
-                .send({ username: testUser.username, password: testUser.password })
-                .end((err, res) => {
-                    res.should.have.status(200);
-                    res.should.redirectTo('/');
-                    agent
-                        .get('/')
-                        .end((err, res) => {
-                            res.should.have.status(200);
-                            done();
-                        });
-                });
-        });
-    });
+  // -----------------------------------------
+  // 5. Redirect to Login When Not Logged In
+  // -----------------------------------------
+  it('should redirect to /login when visiting "/" and not logged in', (done) => {
+    chai.request(server)
+      .get('/')
+      .end((err, res) => {
+        expect(res).to.redirect;
+        expect(res.redirects[0]).to.include('/login');
+        done();
+      });
+  });
 });

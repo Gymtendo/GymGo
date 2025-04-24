@@ -1,4 +1,12 @@
-require('dotenv').config();
+// *********************************************************************************
+// Load Environment Variables
+// *********************************************************************************
+if (process.env.NODE_ENV === 'test') {
+  require('dotenv').config({ path: './.env.test' });
+} else {
+  require('dotenv').config();
+}
+
 // *********************************************************************************
 // Import Dependencies
 // *********************************************************************************
@@ -9,6 +17,7 @@ const pgp = require('pg-promise')();  // To connect to the Postgres DB from the 
 const session = require('express-session');// To set the session object. To store or access session data, use the `req.session`, which is (generally) serialized as JSON by the store.
 const bodyParser = require('body-parser');
 const bcrypt = require('bcryptjs');//  To hash passwords
+
 
 
 const app = express();
@@ -58,6 +67,10 @@ app.use(session({
 
 app.use((req, res, next) => {
   res.locals.loggedIn = !!req.session.user;
+  next();
+});
+app.use((req, res, next) => {
+  res.locals.currentPath = req.path;
   next();
 });
 

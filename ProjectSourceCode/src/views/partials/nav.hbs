@@ -2,18 +2,21 @@
   <div class="container-fluid">
     <ul class="navbar-nav d-flex flex-row w-100 justify-content-around">
 
+      <!-- Leaderboard -->
       <li class="nav-item">
         <a class="nav-link" href="/leaderboard">
           <i class="bi bi-list-ol"></i> <span class="nav-text">Leaderboard</span>
         </a>
       </li>
 
+      <!-- Friends -->
       <li class="nav-item">
         <a class="nav-link" href="/friends">
           <i class="bi bi-people"></i> <span class="nav-text">Friends</span>
         </a>
       </li>
 
+      <!-- Add Exercise -->
       <li class="nav-item dropdown">
         <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
           <i class="bi bi-plus"></i> <span class="nav-text">Add Exercise</span>
@@ -23,12 +26,14 @@
         </ul>
       </li>
 
+      <!-- Boss -->
       <li class="nav-item">
         <a class="nav-link" href="/boss">
           <i class="bi bi-emoji-angry"></i> <span class="nav-text">Boss</span>
         </a>
       </li>
 
+      <!-- Goals -->
       <li class="nav-item dropdown">
         <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
           <i class="bi bi-trophy"></i> <span class="nav-text">Goals</span>
@@ -40,49 +45,46 @@
         </ul>
       </li>
 
+      <!-- Profile / Login / Register -->
       {{#if loggedIn}}
-      <!-- Profile Dropdown shown only when logged in -->
-      <li class="nav-item dropdown">
-        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-          <i class="bi bi-person-circle"></i> <span class="nav-text">Profile</span>
-        </a>
-        <ul class="dropdown-menu dropdown-menu-end">
-          <li><a class="dropdown-item" href="/history">Exercise History</a></li>
-          {{!-- <li><a class="dropdown-item" href="/user">User</a></li> --}}
-          <li>
-            <p class="dropdown-item mb-0 disabled text-muted">User: {{username}}</p>
-            <p class="dropdown-item mb-0 disabled text-muted">Your XP: {{xp}}</p>
-
-          </li>
-          <li>
-            <hr class="dropdown-divider">
-          </li>
-          <li>
-            <form id="logout-form-dropdown" action="/logout" method="POST" class="d-inline">
-              <button type="submit" class="dropdown-item text-danger">
-                <i class="bi bi-box-arrow-right"></i> Logout
-              </button>
-            </form>
-          </li>
-        </ul>
-      </li>
+        <!-- Profile Dropdown -->
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+            <i class="bi bi-person-circle"></i> <span class="nav-text">Profile</span>
+          </a>
+          <ul class="dropdown-menu dropdown-menu-end">
+            <li><a class="dropdown-item" href="/history">Exercise History</a></li>
+            <li>
+              <p class="dropdown-item mb-0 disabled text-muted">User: {{username}}</p>
+              <p class="dropdown-item mb-0 disabled text-muted">Your XP: {{xp}}</p>
+            </li>
+            <li><hr class="dropdown-divider"></li>
+            <li>
+              <form id="logout-form-dropdown" action="/logout" method="POST" class="d-inline">
+                <button type="submit" class="dropdown-item text-danger">
+                  <i class="bi bi-box-arrow-right"></i> Logout
+                </button>
+              </form>
+            </li>
+          </ul>
+        </li>
       {{else}}
-      <!-- Shown only when NOT logged in -->
-      {{#unless (eq currentPage "login")}}
-      <li class="nav-item">
-        <a class="nav-link" href="/login">
-          <i class="bi bi-box-arrow-in-left"></i> Login
-        </a>
-      </li>
-      {{/unless}}
+        <!-- Login and Register if not logged in -->
+        {{#unless (eq currentPath "/login")}}
+          <li class="nav-item">
+            <a class="nav-link" href="/login">
+              <i class="bi bi-box-arrow-in-left"></i> Login
+            </a>
+          </li>
+        {{/unless}}
 
-      {{#unless (eq currentPage "register")}}
-      <li class="nav-item">
-        <a class="nav-link" href="/register">
-          <i class="bi bi-person-plus"></i> Register
-        </a>
-      </li>
-      {{/unless}}
+        {{#unless (eq currentPath "/register")}}
+          <li class="nav-item">
+            <a class="nav-link" href="/register">
+              <i class="bi bi-person-plus"></i> Register
+            </a>
+          </li>
+        {{/unless}}
       {{/if}}
 
     </ul>
