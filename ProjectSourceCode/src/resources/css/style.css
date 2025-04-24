@@ -21,6 +21,22 @@
     footer {
         padding-bottom: 60px;
     }
+
+    .dropdown-social {
+        margin-top: -240%;
+    }
+
+    .dropdown-programs {
+        margin-top: -300%;
+    }
+
+    .dropdown-objectives {
+        margin-top: -240%;
+    }
+
+    .dropdown-profile {
+        margin-top: -400%;
+    }
 }
 
 /* If on desktop, have navbar display icons and text at top of page */
