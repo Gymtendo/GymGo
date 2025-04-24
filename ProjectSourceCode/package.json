@@ -10,7 +10,7 @@
     "prestart": "npm install",
     "start": "nodemon src/index.js",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "testandrun": "npm run prestart && npm start"
+    "testandrun": "npm test && npm run prestart && npm start"
   },
   "repository": {
     "type": "git",
