@@ -10,7 +10,7 @@
     "prestart": "npm install",
     "start": "nodemon server.js",
     "test": "cross-env NODE_ENV=test mocha --timeout 10000",
-    "testandrun": "npm run prestart && npm start"
+    "testandrun": "npm run prestart && npm test && npm start"
   },
   "repository": {
     "type": "git",

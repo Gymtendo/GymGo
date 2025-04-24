@@ -1,20 +1,26 @@
 <div class="container py-4">
     <div class="image-card text-center">
         {{#if BossImage}}
-        <img src="{{BossImage}}" alt="Boss Image" />
+        <img src="{{BossImage}}" {{#if defeated}}style="filter: grayscale(100%);" {{else if expired}}style="filter: grayscale(100%);" {{/if}} alt="Boss Image" />
         {{else}}
-        <img src="https://picsum.photos/id/40/200/300" alt="Boss Image" />
+        <img src="https://picsum.photos/id/40/200/300" {{#if defeated}}style="filter: grayscale(100%);"{{else if expired}}style="filter: grayscale(100%);"{{/if}} alt="Boss Image" />
         {{/if}}
         <h5 class="mt-3">{{BossName}}</h5>
-        <p>Reward: +{{Reward}}XP</p>
-        <p>Deadline: {{Deadline}}</p>
+        <p {{#if defeated}}style="color:green;"{{/if}}>Reward: +{{Reward}}XP {{#if defeated}}Given!{{/if}}</p>
+        <p {{#if expired}}style="color:red;"{{/if}}>Deadline: {{#if expired}}Expired!{{else}}{{Deadline}}{{/if}}</p>
 
-        <div class="d-flex align-items-center mt-2">
+        <div class="d-flex align-items-center mtb-2">
             <div class="progress-label">HP:</div>
             <div class="progress" role="progressbar" aria-label="Health" aria-valuemin="0" aria-valuemax="{{MaxHP}}" data-current="{{HP}}" data-max="{{MaxHP}}">
                 <div class="progress-bar bg-success"></div>
                 <span class="progress-text"></span>
             </div>
         </div>
+        {{#if expired}}
+        <p>This boss's deadline has passed. Better luck next time!</p>
+        {{/if}}
+        {{#if defeated}}
+        <p>This boss has been defeated and reward XP has been given out! Stay tuned for the next boss!</p>
+        {{/if}}
     </div>
 </div>
