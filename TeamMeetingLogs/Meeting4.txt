@@ -1,6 +1,10 @@
 4/18/2025
 IMPORTANT:
-add acceptance criteria for all the stories
+add acceptance criteria for all the stories in the project board on GitHub:
 We need a list of things that has to be done for the story to be marked done
 
-Do something with the Goals tab
+Do something with the Goals tab": make it more interactive, otherwise rename
+
+Demo looked good, make sure quests and bosses dynamically update and give reward
+
+Website functionality complete, add final touches for stylization and prepare to present next week
