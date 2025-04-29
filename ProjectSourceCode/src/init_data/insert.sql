@@ -48,4 +48,4 @@ VALUES
 ('Iron Titan', 0, 500, NULL, 100, TRUE, '2025-04-18'),
 ('Cardio Kraken', 0, 800, NULL, 600, TRUE, '2025-04-18'),
 ('Stretch Serpent', 0, 300, NULL, 225, TRUE, '2025-04-18'),
-('Gains Goblin', 320, 1000, NULL, 750, FALSE, '2025-04-25');
+('Gains Goblin', 320, 1000, NULL, 750, FALSE, '2025-05-31');
