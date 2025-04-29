@@ -1,0 +1,6 @@
+4/18/2025
+IMPORTANT:
+add acceptance criteria for all the stories
+We need a list of things that has to be done for the story to be marked done
+
+Do something with the Goals tab
